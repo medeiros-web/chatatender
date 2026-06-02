@@ -28,6 +28,7 @@ import {
   SAAIQuality, SAToolExecutions, SAAuditLogs, SASystemHealth,
 } from '@/pages/super-admin/SuperAdminPage'
 import { PublicFunnelPage } from '@/pages/public/PublicFunnelPage'
+import { PublicOrgPage } from '@/pages/public/PublicOrgPage'
 import { PublicFormPage } from '@/pages/public/PublicFormPage'
 import { PublicBookingPage } from '@/pages/public/PublicBookingPage'
 
@@ -88,6 +89,7 @@ export default function App() {
           </Route>
 
           {/* Páginas públicas — sem autenticação */}
+          <Route path="/wl/:orgSlug"    element={<PublicOrgPage />} />
           <Route path="/funnel/:slug"   element={<PublicFunnelPage />} />
           <Route path="/f/:slug"        element={<PublicFormPage />} />
           <Route path="/booking/:slug"  element={<PublicBookingPage />} />

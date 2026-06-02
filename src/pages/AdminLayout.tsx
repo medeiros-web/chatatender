@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { usePlatformName } from '@/hooks/usePlatformBranding'
+import { usePlatformName, usePlatformBranding } from '@/hooks/usePlatformBranding'
 import { useProfile, type ProfileData } from '@/hooks/useProfile'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -13,9 +13,10 @@ import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { MessageSquare, LogOut, User, Settings, ShieldCheck, Bell } from 'lucide-react'
 
 export function AdminLayout() {
-  const { user, isSuperAdmin, signOut } = useAuth()
+  const { user, isSuperAdmin, signOut, organizationId } = useAuth()
   const { data: profileRaw } = useProfile(user?.id)
   const profile = profileRaw as ProfileData | null | undefined
+  usePlatformBranding(organizationId)   // injects --primary, favicon, title
   const platformName = usePlatformName()
   const navigate = useNavigate()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
