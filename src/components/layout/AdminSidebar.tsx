@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import {
   LayoutDashboard, Building2, Users, MessageSquare,
   Calendar, Megaphone, FileText, Settings, ChevronLeft,
-  Inbox, BarChart3, Zap, Target, DollarSign, Bot, CreditCard,
+  Inbox, BarChart3, Zap, Target, DollarSign, Bot, CreditCard, Bell, Mail,
 } from 'lucide-react'
 
 interface NavItem {
@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Forms', to: '/admin/forms', icon: FileText },
   { label: 'Pagamentos', to: '/admin/payments', icon: CreditCard },
   { label: 'Relatórios', to: '/admin/reports', icon: BarChart3, soon: true },
+  { label: 'Notificações', to: '/admin/notifications', icon: Bell },
 ]
 
 const ADMIN_ITEMS: NavItem[] = [
@@ -34,6 +35,7 @@ const ADMIN_ITEMS: NavItem[] = [
   { label: 'Produtos', to: '/admin/products', icon: Megaphone, adminOnly: true },
   { label: 'Comissões', to: '/admin/commissions', icon: DollarSign, adminOnly: true },
   { label: 'WhatsApp', to: '/admin/whatsapp', icon: MessageSquare, adminOnly: true },
+  { label: 'E-mail / Templates', to: '/admin/email-templates', icon: Mail, adminOnly: true },
   { label: 'Configurações', to: '/admin/settings', icon: Settings, adminOnly: true, soon: true },
 ]
 

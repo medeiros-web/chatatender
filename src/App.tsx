@@ -19,6 +19,8 @@ import { CalendarPage } from '@/pages/admin/CalendarPage'
 import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { CommissionsPage } from '@/pages/admin/CommissionsPage'
 import { DashboardPage } from '@/pages/admin/DashboardPage'
+import { NotificationsPage } from '@/pages/admin/NotificationsPage'
+import { EmailTemplatesPage } from '@/pages/admin/EmailTemplatesPage'
 import { SuperAdminLayout } from '@/pages/super-admin/SuperAdminLayout'
 import {
   SADashboard, SAOrganizations, SAUsers,
@@ -63,7 +65,9 @@ export default function App() {
               <Route path="payments"     element={<PaymentsPage />} />
               <Route path="commissions"  element={<CommissionsPage />} />
               <Route path="funnels"      element={<FunnelsPage />} />
-              <Route path="forms"        element={<FormsPage />} />
+              <Route path="forms"            element={<FormsPage />} />
+              <Route path="notifications"    element={<NotificationsPage />} />
+              <Route path="email-templates"  element={<EmailTemplatesPage />} />
             </Route>
 
             <Route element={<SuperAdminRoute />}>

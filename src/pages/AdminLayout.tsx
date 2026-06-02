@@ -10,7 +10,8 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
-import { MessageSquare, LogOut, User, Settings, ShieldCheck, Bell } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { MessageSquare, LogOut, User, Settings, ShieldCheck } from 'lucide-react'
 
 export function AdminLayout() {
   const { user, isSuperAdmin, signOut, organizationId } = useAuth()
@@ -53,10 +54,7 @@ export function AdminLayout() {
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* Notificações (Módulo 15) */}
-            <Button variant="ghost" size="icon-sm" className="relative text-muted-foreground">
-              <Bell className="h-4 w-4" />
-            </Button>
+            <NotificationBell />
 
             {/* Avatar menu */}
             <DropdownMenu>
