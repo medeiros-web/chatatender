@@ -19,6 +19,14 @@ import { CalendarPage } from '@/pages/admin/CalendarPage'
 import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { CommissionsPage } from '@/pages/admin/CommissionsPage'
 import { DashboardPage } from '@/pages/admin/DashboardPage'
+import { SuperAdminLayout } from '@/pages/super-admin/SuperAdminLayout'
+import {
+  SADashboard, SAOrganizations, SAUsers,
+  SAPlans, SASubscriptions, SABilling,
+  SAReleases, SAHelpArticles, SASupport,
+  SABranding, SAEmailSettings, SAPlatformSettings,
+  SAAIQuality, SAToolExecutions, SAAuditLogs, SASystemHealth,
+} from '@/pages/super-admin/SuperAdminPage'
 import { PublicFunnelPage } from '@/pages/public/PublicFunnelPage'
 import { PublicFormPage } from '@/pages/public/PublicFormPage'
 import { PublicBookingPage } from '@/pages/public/PublicBookingPage'
@@ -58,9 +66,24 @@ export default function App() {
             </Route>
 
             <Route element={<SuperAdminRoute />}>
-              <Route path="/super-admin" element={
-                <div className="p-8 text-foreground font-medium">Super Admin — Módulo 13</div>
-              } />
+              <Route path="/super-admin" element={<SuperAdminLayout />}>
+                <Route index                  element={<SADashboard />} />
+                <Route path="organizations"   element={<SAOrganizations />} />
+                <Route path="users"           element={<SAUsers />} />
+                <Route path="plans"           element={<SAPlans />} />
+                <Route path="subscriptions"   element={<SASubscriptions />} />
+                <Route path="billing"         element={<SABilling />} />
+                <Route path="releases"        element={<SAReleases />} />
+                <Route path="help"            element={<SAHelpArticles />} />
+                <Route path="support"         element={<SASupport />} />
+                <Route path="branding"        element={<SABranding />} />
+                <Route path="email"           element={<SAEmailSettings />} />
+                <Route path="settings"        element={<SAPlatformSettings />} />
+                <Route path="ai-quality"      element={<SAAIQuality />} />
+                <Route path="executions"      element={<SAToolExecutions />} />
+                <Route path="audit"           element={<SAAuditLogs />} />
+                <Route path="health"          element={<SASystemHealth />} />
+              </Route>
             </Route>
           </Route>
 
