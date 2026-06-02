@@ -649,8 +649,8 @@ export function AgentsPage() {
 
                       {agent && (
                         <div className="flex flex-wrap gap-1.5">
-                          {agent.spin_enabled && <Badge variant="default" className="text-[10px]"><Brain className="h-2.5 w-2.5 mr-1" /> SPIN</Badge>}
-                          {agent.proactive_scheduling && <Badge variant="secondary" className="text-[10px]"><Zap className="h-2.5 w-2.5 mr-1" /> Agendamento</Badge>}
+                          {!!agent.spin_enabled && <Badge variant="default" className="text-[10px]"><Brain className="h-2.5 w-2.5 mr-1" /> SPIN</Badge>}
+                          {!!agent.proactive_scheduling && <Badge variant="secondary" className="text-[10px]"><Zap className="h-2.5 w-2.5 mr-1" /> Agendamento</Badge>}
                           <Badge variant="muted" className="text-[10px]">{(agent.enabled_tools as string[])?.length ?? 0} ferramentas</Badge>
                           <Badge variant="outline" className="text-[10px] capitalize">{agent.tone as string}</Badge>
                         </div>
@@ -694,7 +694,7 @@ export function AgentsPage() {
           open={!!formOpen}
           onClose={() => setFormOpen(null)}
           productId={formOpen.productId}
-          existingAgent={(agents as Record<string, unknown>[]).find(a => a.product_id === formOpen.productId) as ReturnType<typeof useProductAgent>['data']}
+          existingAgent={(agents as unknown as ReturnType<typeof useProductAgent>['data'][]).find(a => a?.product_id === formOpen.productId)}
         />
       )}
     </div>
