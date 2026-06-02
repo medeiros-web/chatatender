@@ -21,6 +21,7 @@ import { CommissionsPage } from '@/pages/admin/CommissionsPage'
 import { DashboardPage } from '@/pages/admin/DashboardPage'
 import { NotificationsPage } from '@/pages/admin/NotificationsPage'
 import { EmailTemplatesPage } from '@/pages/admin/EmailTemplatesPage'
+import { BrainPage } from '@/pages/admin/BrainPage'
 import { SuperAdminLayout } from '@/pages/super-admin/SuperAdminLayout'
 import {
   SADashboard, SAOrganizations, SAUsers,
@@ -68,6 +69,7 @@ export default function App() {
               <Route path="forms"            element={<FormsPage />} />
               <Route path="notifications"    element={<NotificationsPage />} />
               <Route path="email-templates"  element={<EmailTemplatesPage />} />
+              <Route path="brain"            element={<BrainPage />} />
             </Route>
 
             <Route element={<SuperAdminRoute />}>

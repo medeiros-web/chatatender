@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlatformName, usePlatformBranding } from '@/hooks/usePlatformBranding'
 import { useProfile, type ProfileData } from '@/hooks/useProfile'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -11,15 +12,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { BottomNav } from '@/components/mobile/BottomNav'
+import { FAB } from '@/components/mobile/FAB'
 import { MessageSquare, LogOut, User, Settings, ShieldCheck } from 'lucide-react'
 
 export function AdminLayout() {
   const { user, isSuperAdmin, signOut, organizationId } = useAuth()
   const { data: profileRaw } = useProfile(user?.id)
   const profile = profileRaw as ProfileData | null | undefined
-  usePlatformBranding(organizationId)   // injects --primary, favicon, title
+  usePlatformBranding(organizationId)
   const platformName = usePlatformName()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const initials = profile?.full_name
@@ -36,11 +40,13 @@ export function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <AdminSidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(v => !v)}
-      />
+      {/* Sidebar — hidden on mobile */}
+      {!isMobile && (
+        <AdminSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(v => !v)}
+        />
+      )}
 
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -56,7 +62,6 @@ export function AdminLayout() {
           <div className="flex items-center gap-2">
             <NotificationBell />
 
-            {/* Avatar menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon-sm" className="rounded-full">
@@ -99,11 +104,19 @@ export function AdminLayout() {
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Content — extra bottom padding on mobile for BottomNav */}
+        <main className={isMobile ? 'flex-1 overflow-y-auto pb-16' : 'flex-1 overflow-y-auto'}>
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile navigation */}
+      {isMobile && (
+        <>
+          <BottomNav />
+          <FAB />
+        </>
+      )}
     </div>
   )
 }
