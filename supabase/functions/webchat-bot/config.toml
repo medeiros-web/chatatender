@@ -1,0 +1,3 @@
+# webchat-bot é chamado apenas internamente (pelo evolution-webhook e pelo debounce)
+# com service role key — JWT obrigatório
+verify_jwt = true
