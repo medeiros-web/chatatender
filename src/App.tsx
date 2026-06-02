@@ -18,6 +18,7 @@ import { FormsPage } from '@/pages/admin/FormsPage'
 import { CalendarPage } from '@/pages/admin/CalendarPage'
 import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { CommissionsPage } from '@/pages/admin/CommissionsPage'
+import { DashboardPage } from '@/pages/admin/DashboardPage'
 import { PublicFunnelPage } from '@/pages/public/PublicFunnelPage'
 import { PublicFormPage } from '@/pages/public/PublicFormPage'
 import { PublicBookingPage } from '@/pages/public/PublicBookingPage'
@@ -41,7 +42,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
 
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPlaceholder />} />
+              <Route index element={<DashboardPage />} />
               <Route path="sectors"      element={<SectorsPage />} />
               <Route path="products"     element={<ProductsPage />} />
               <Route path="products/:id" element={<ProductDetailPage />} />

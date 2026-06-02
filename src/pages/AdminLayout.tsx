@@ -110,17 +110,5 @@ export function AdminLayout() {
 }
 
 export function AdminDashboardPlaceholder() {
-  return (
-    <div className="flex min-h-full items-center justify-center p-8">
-      <div className="text-center space-y-3">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-          <MessageSquare className="h-8 w-8 text-primary" />
-        </div>
-        <h2 className="font-display text-xl font-semibold text-foreground">Painel Admin</h2>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Dashboard completo chega no Módulo 12. Use a barra lateral para navegar.
-        </p>
-      </div>
-    </div>
-  )
+  return null
 }
