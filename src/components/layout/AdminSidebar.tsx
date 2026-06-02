@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Leads & CRM', to: '/admin/leads', icon: Users },
   { label: 'Pipeline', to: '/admin/pipeline', icon: Target, soon: true },
   { label: 'Agentes IA', to: '/admin/agents', icon: Bot },
-  { label: 'Calendário', to: '/admin/calendar', icon: Calendar, soon: true },
+  { label: 'Calendário', to: '/admin/calendar', icon: Calendar },
   { label: 'Funis', to: '/admin/funnels', icon: Zap },
   { label: 'Forms', to: '/admin/forms', icon: FileText },
   { label: 'Relatórios', to: '/admin/reports', icon: BarChart3, soon: true },

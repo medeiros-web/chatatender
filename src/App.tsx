@@ -15,8 +15,10 @@ import { WhatsAppPage } from '@/pages/admin/WhatsAppPage'
 import { AgentsPage } from '@/pages/admin/AgentsPage'
 import { FunnelsPage } from '@/pages/admin/FunnelsPage'
 import { FormsPage } from '@/pages/admin/FormsPage'
+import { CalendarPage } from '@/pages/admin/CalendarPage'
 import { PublicFunnelPage } from '@/pages/public/PublicFunnelPage'
 import { PublicFormPage } from '@/pages/public/PublicFormPage'
+import { PublicBookingPage } from '@/pages/public/PublicBookingPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +47,7 @@ export default function App() {
               <Route path="inbox"        element={<InboxPage />} />
               <Route path="whatsapp"     element={<WhatsAppPage />} />
               <Route path="agents"       element={<AgentsPage />} />
+              <Route path="calendar"     element={<CalendarPage />} />
               <Route path="funnels"      element={<FunnelsPage />} />
               <Route path="forms"        element={<FormsPage />} />
             </Route>
@@ -57,8 +60,9 @@ export default function App() {
           </Route>
 
           {/* Páginas públicas — sem autenticação */}
-          <Route path="/funnel/:slug" element={<PublicFunnelPage />} />
-          <Route path="/f/:slug"      element={<PublicFormPage />} />
+          <Route path="/funnel/:slug"   element={<PublicFunnelPage />} />
+          <Route path="/f/:slug"        element={<PublicFormPage />} />
+          <Route path="/booking/:slug"  element={<PublicBookingPage />} />
 
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />

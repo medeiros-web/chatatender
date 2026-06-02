@@ -1,0 +1,2 @@
+[functions.google-calendar-auth]
+verify_jwt = true
