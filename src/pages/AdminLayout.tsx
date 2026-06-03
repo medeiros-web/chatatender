@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Component, type ReactNode } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlatformName, usePlatformBranding } from '@/hooks/usePlatformBranding'
@@ -106,7 +106,9 @@ export function AdminLayout() {
 
         {/* Content — extra bottom padding on mobile for BottomNav */}
         <main className={isMobile ? 'flex-1 overflow-y-auto pb-16' : 'flex-1 overflow-y-auto'}>
-          <Outlet />
+          <PageErrorBoundary>
+            <Outlet />
+          </PageErrorBoundary>
         </main>
       </div>
 
@@ -123,4 +125,32 @@ export function AdminLayout() {
 
 export function AdminDashboardPlaceholder() {
   return null
+}
+
+class PageErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+          <div className="text-4xl">⚠️</div>
+          <h2 className="text-lg font-semibold text-foreground">Erro ao carregar esta página</h2>
+          <p className="text-sm text-muted-foreground max-w-md">{this.state.error.message}</p>
+          <button
+            className="text-sm text-primary underline"
+            onClick={() => this.setState({ error: null })}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
 }
