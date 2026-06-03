@@ -22,6 +22,7 @@ export interface SAUser {
   email: string
   avatar_url: string | null
   organization_id: string | null
+  status: 'pending' | 'active' | 'rejected' | 'suspended'
   created_at: string
   org_name?: string
   role?: string
@@ -205,21 +206,33 @@ export function useSAUsers() {
     queryFn: async () => {
       const { data, error } = await db
         .from('profiles')
-        .select('id, full_name, email, avatar_url, organization_id, created_at, organizations(name), user_roles(role)')
+        .select('id, full_name, email, avatar_url, organization_id, status, created_at, organizations(name), user_roles(role)')
         .order('created_at', { ascending: false })
         .limit(200)
       if (error) throw error
       return (data ?? []).map((u: any) => ({
         id: u.id,
         full_name: u.full_name,
-        email: u.email,
+        email: u.email ?? '',
         avatar_url: u.avatar_url,
         organization_id: u.organization_id,
+        status: u.status ?? 'active',
         created_at: u.created_at,
         org_name: u.organizations?.name ?? null,
         role: u.user_roles?.[0]?.role ?? null,
       }))
     },
+  })
+}
+
+export function useSetUserStatus() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ userId, status }: { userId: string; status: 'active' | 'rejected' | 'suspended' }) => {
+      const { error } = await db.rpc('set_user_status', { p_user_id: userId, p_status: status })
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa_users'] }),
   })
 }
 

@@ -3,14 +3,18 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { AppRole } from '@/types/database'
 
+type ProfileStatus = 'pending' | 'active' | 'rejected' | 'suspended'
+
 interface AuthState {
   session: Session | null
   user: User | null
   role: AppRole | null
   organizationId: string | null
+  profileStatus: ProfileStatus
   isLoading: boolean
   isSuperAdmin: boolean
   isAdmin: boolean
+  isApproved: boolean
 }
 
 const initialState: AuthState = {
@@ -18,9 +22,11 @@ const initialState: AuthState = {
   user: null,
   role: null,
   organizationId: null,
+  profileStatus: 'active',
   isLoading: true,
   isSuperAdmin: false,
   isAdmin: false,
+  isApproved: true,
 }
 
 export function useAuth() {
@@ -34,16 +40,16 @@ export function useAuth() {
 
     try {
       const [profileRes, roleRes] = await Promise.all([
-        supabase.from('profiles').select('organization_id').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('organization_id, status').eq('id', user.id).maybeSingle(),
         supabase.from('user_roles').select('role, organization_id').eq('user_id', user.id).maybeSingle(),
       ])
 
-      const organizationId =
-        (profileRes.data as { organization_id: string | null } | null)?.organization_id
-        ?? (roleRes.data as { organization_id: string } | null)?.organization_id
-        ?? null
+      const profileData = profileRes.data as { organization_id: string | null; status: string | null } | null
+      const roleData    = roleRes.data as { role: AppRole; organization_id: string } | null
 
-      const role = ((roleRes.data as { role: AppRole } | null)?.role ?? null) as AppRole | null
+      const organizationId = profileData?.organization_id ?? roleData?.organization_id ?? null
+      const role = (roleData?.role ?? null) as AppRole | null
+      const profileStatus = (profileData?.status ?? 'active') as ProfileStatus
       const currentSession = (await supabase.auth.getSession()).data.session
 
       setState({
@@ -51,18 +57,18 @@ export function useAuth() {
         user,
         role,
         organizationId,
+        profileStatus,
         isLoading: false,
         isSuperAdmin: role === 'super_admin',
         isAdmin: role === 'admin' || role === 'super_admin',
+        isApproved: profileStatus === 'active',
       })
     } catch {
-      // Se falhar (ex: RLS, rede), ainda desbloqueia o app
       setState({ ...initialState, isLoading: false, user, session: null })
     }
   }, [])
 
   useEffect(() => {
-    // getSession primeiro — evita flash de redirect
     supabase.auth.getSession().then(({ data: { session } }) => {
       loadUserData(session?.user ?? null)
     })

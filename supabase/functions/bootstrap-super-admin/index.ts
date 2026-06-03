@@ -77,11 +77,13 @@ serve(async (req) => {
 
   const orgId = org.id
 
-  // 4. Upsert profile
+  // 4. Upsert profile (super admin sempre active)
   await supabase.from('profiles').upsert({
     id: userId,
     organization_id: orgId,
     full_name: 'Super Admin',
+    email,
+    status: 'active',
   }, { onConflict: 'id' })
 
   // 5. Upsert user_role como super_admin

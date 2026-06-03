@@ -25,6 +25,9 @@ export function LoginPage() {
   const platformName = usePlatformName()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/admin'
 
+  const searchParams = new URLSearchParams(location.search)
+  const justApproved = searchParams.get('approved') === 'true'
+
   const [showPassword, setShowPassword] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -158,6 +161,12 @@ export function LoginPage() {
                 <p className="text-xs text-destructive">{errors.password.message}</p>
               )}
             </div>
+
+            {justApproved && (
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
+                <p className="text-xs text-emerald-600">✅ Seu acesso foi aprovado! Faça login para continuar.</p>
+              </div>
+            )}
 
             {authError && (
               <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">

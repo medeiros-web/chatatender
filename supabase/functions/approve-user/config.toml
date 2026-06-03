@@ -1,0 +1,2 @@
+[functions.approve-user]
+verify_jwt = false

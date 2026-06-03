@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   useSAStats, useSAOrganizations, useToggleOrganization,
-  useSAUsers, usePlans, useUpsertPlan, useDeletePlan,
+  useSAUsers, useSetUserStatus, usePlans, useUpsertPlan, useDeletePlan,
   useSASubscriptions, useUpdateSubscription,
   usePlatformSettings, useUpdatePlatformSetting,
   useReleases, useUpsertRelease, useDeleteRelease,
@@ -253,21 +253,23 @@ export function SAOrganizations() {
 
 export function SAUsers() {
   const { data: users = [], isLoading } = useSAUsers()
+  const setStatus = useSetUserStatus()
   const [search, setSearch] = useState('')
 
+  const pending  = users.filter(u => u.status === 'pending')
   const filtered = users.filter(u =>
-    (u.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
+    u.status !== 'pending' &&
+    ((u.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+     u.email.toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
-    <Section title={`Usuários (${users.length})`}>
-      <Input placeholder="Buscar usuário..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
-      {isLoading
-        ? <Skeleton className="h-64 w-full" />
-        : (
-          <Table heads={['Usuário', 'Email', 'Organização', 'Role', 'Cadastro']}>
-            {filtered.map(u => (
+    <div className="space-y-6">
+      {/* ── Pendentes de aprovação ── */}
+      {pending.length > 0 && (
+        <Section title={`⏳ Aguardando aprovação (${pending.length})`}>
+          <Table heads={['Usuário', 'Email', 'Cadastro', 'Ações']}>
+            {pending.map(u => (
               <Tr key={u.id}>
                 <Td>
                   <div className="flex items-center gap-2">
@@ -276,15 +278,77 @@ export function SAUsers() {
                   </div>
                 </Td>
                 <Td className="text-muted-foreground text-xs">{u.email}</Td>
-                <Td className="text-xs">{u.org_name ?? '—'}</Td>
-                <Td><Badge variant="outline" className="text-[10px]">{u.role ?? '—'}</Badge></Td>
                 <Td className="text-muted-foreground text-xs">{timeAgo(u.created_at)}</Td>
+                <Td>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3"
+                      onClick={() => setStatus.mutate({ userId: u.id, status: 'active' })}
+                      disabled={setStatus.isPending}
+                    >
+                      <CheckCircle2 className="h-3 w-3" /> Aprovar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 gap-1 text-xs px-3"
+                      onClick={() => setStatus.mutate({ userId: u.id, status: 'rejected' })}
+                      disabled={setStatus.isPending}
+                    >
+                      <XCircle className="h-3 w-3" /> Rejeitar
+                    </Button>
+                  </div>
+                </Td>
               </Tr>
             ))}
           </Table>
-        )
-      }
-    </Section>
+        </Section>
+      )}
+
+      {/* ── Todos os usuários ── */}
+      <Section title={`Todos os usuários (${users.length - pending.length})`}>
+        <Input placeholder="Buscar usuário..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+        {isLoading
+          ? <Skeleton className="h-64 w-full" />
+          : (
+            <Table heads={['Usuário', 'Email', 'Organização', 'Role', 'Status', 'Cadastro', 'Ações']}>
+              {filtered.map(u => (
+                <Tr key={u.id}>
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[10px]">{initials(u.full_name)}</AvatarFallback></Avatar>
+                      <span>{u.full_name ?? '—'}</span>
+                    </div>
+                  </Td>
+                  <Td className="text-muted-foreground text-xs">{u.email}</Td>
+                  <Td className="text-xs">{u.org_name ?? '—'}</Td>
+                  <Td><Badge variant="outline" className="text-[10px]">{u.role ?? '—'}</Badge></Td>
+                  <Td><StatusBadge status={u.status} /></Td>
+                  <Td className="text-muted-foreground text-xs">{timeAgo(u.created_at)}</Td>
+                  <Td>
+                    {u.status === 'active' && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-2"
+                        onClick={() => setStatus.mutate({ userId: u.id, status: 'suspended' })}
+                        disabled={setStatus.isPending}>
+                        Suspender
+                      </Button>
+                    )}
+                    {(u.status === 'suspended' || u.status === 'rejected') && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-2"
+                        onClick={() => setStatus.mutate({ userId: u.id, status: 'active' })}
+                        disabled={setStatus.isPending}>
+                        Reativar
+                      </Button>
+                    )}
+                  </Td>
+                </Tr>
+              ))}
+            </Table>
+          )
+        }
+      </Section>
+    </div>
   )
 }
 
