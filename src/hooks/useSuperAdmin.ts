@@ -510,7 +510,7 @@ export function useAgentToolExecutions(limit = 100) {
     queryFn: async () => {
       const { data, error } = await db
         .from('agent_tool_executions')
-        .select('*, ai_agents(name)')
+        .select('*, product_agents(name)')
         .order('created_at', { ascending: false })
         .limit(limit)
       if (error) throw error

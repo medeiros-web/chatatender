@@ -36,6 +36,7 @@ export interface RecentConversation {
   id: string
   contact_name: string | null
   last_message: string | null
+  last_message_preview: string | null
   last_message_at: string | null
   unread_count: number
 }
@@ -65,7 +66,7 @@ export function useDashboardStats() {
         db.from('leads').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId),
         db.from('leads').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).gte('created_at', from).lte('created_at', to),
         db.from('leads').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).gte('created_at', lastMonthFrom).lte('created_at', lastMonthTo),
-        db.from('conversations').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'open'),
+        db.from('webchat_conversations').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'open'),
         db.from('commissions').select('deal_value').eq('organization_id', organizationId).neq('status', 'cancelled').gte('created_at', from).lte('created_at', to),
         db.from('commissions').select('deal_value').eq('organization_id', organizationId).neq('status', 'cancelled').gte('created_at', lastMonthFrom).lte('created_at', lastMonthTo),
         db.from('commissions').select('commission_value').eq('organization_id', organizationId).eq('status', 'pending'),
@@ -128,8 +129,8 @@ export function useRecentConversations() {
     staleTime: 1000 * 60,
     queryFn: async () => {
       const { data, error } = await db
-        .from('conversations')
-        .select('id, contact_name, last_message, last_message_at, unread_count')
+        .from('webchat_conversations')
+        .select('id, contact_name, last_message_preview, last_message_at, unread_count')
         .eq('organization_id', organizationId)
         .eq('status', 'open')
         .order('last_message_at', { ascending: false })
