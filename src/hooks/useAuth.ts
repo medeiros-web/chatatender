@@ -32,27 +32,37 @@ export function useAuth() {
       return
     }
 
-    const [profileRes, roleRes] = await Promise.all([
-      supabase.from('profiles').select('organization_id').eq('id', user.id).single(),
-      supabase.from('user_roles').select('role').eq('user_id', user.id).single(),
-    ])
+    try {
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from('profiles').select('organization_id').eq('id', user.id).maybeSingle(),
+        supabase.from('user_roles').select('role, organization_id').eq('user_id', user.id).maybeSingle(),
+      ])
 
-    const organizationId = (profileRes.data as { organization_id: string | null } | null)?.organization_id ?? null
-    const role = ((roleRes.data as { role: AppRole } | null)?.role ?? null) as AppRole | null
-    const currentSession = (await supabase.auth.getSession()).data.session
+      const organizationId =
+        (profileRes.data as { organization_id: string | null } | null)?.organization_id
+        ?? (roleRes.data as { organization_id: string } | null)?.organization_id
+        ?? null
 
-    setState({
-      session: currentSession,
-      user,
-      role,
-      organizationId,
-      isLoading: false,
-      isSuperAdmin: role === 'super_admin',
-      isAdmin: role === 'admin' || role === 'super_admin',
-    })
+      const role = ((roleRes.data as { role: AppRole } | null)?.role ?? null) as AppRole | null
+      const currentSession = (await supabase.auth.getSession()).data.session
+
+      setState({
+        session: currentSession,
+        user,
+        role,
+        organizationId,
+        isLoading: false,
+        isSuperAdmin: role === 'super_admin',
+        isAdmin: role === 'admin' || role === 'super_admin',
+      })
+    } catch {
+      // Se falhar (ex: RLS, rede), ainda desbloqueia o app
+      setState({ ...initialState, isLoading: false, user, session: null })
+    }
   }, [])
 
   useEffect(() => {
+    // getSession primeiro — evita flash de redirect
     supabase.auth.getSession().then(({ data: { session } }) => {
       loadUserData(session?.user ?? null)
     })

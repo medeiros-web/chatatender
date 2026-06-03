@@ -1,0 +1,2 @@
+[functions.bootstrap-super-admin]
+verify_jwt = false
