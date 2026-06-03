@@ -93,12 +93,12 @@ function ProductFormDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Setor padrão</Label>
-                <Select value={sectorId} onValueChange={v => setValue('default_sector_id', v)}>
+                <Select value={sectorId || '__none__'} onValueChange={v => setValue('default_sector_id', v === '__none__' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar setor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {sectors.filter(s => s.is_active).map(s => (
                       <SelectItem key={s.id} value={s.id}>
                         <div className="flex items-center gap-2">

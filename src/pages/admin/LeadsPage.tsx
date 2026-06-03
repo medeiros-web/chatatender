@@ -284,10 +284,10 @@ function CreateLeadDialog({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
             <div className="space-y-1.5">
               <Label>Produto / Pipeline</Label>
-              <Select onValueChange={v => setValue('product_id', v)}>
+              <Select onValueChange={v => setValue('product_id', v === '__none__' ? '' : v)}>
                 <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem produto</SelectItem>
+                  <SelectItem value="__none__">Sem produto</SelectItem>
                   {products.filter(p => p.is_active).map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
@@ -373,12 +373,12 @@ export function LeadsPage() {
         </div>
 
         {/* Produto selector */}
-        <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+        <Select value={selectedProductId || '__all__'} onValueChange={v => setSelectedProductId(v === '__all__' ? '' : v)}>
           <SelectTrigger className="w-44 h-8 text-sm">
             <SelectValue placeholder="Todos os produtos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os produtos</SelectItem>
+            <SelectItem value="__all__">Todos os produtos</SelectItem>
             {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -421,10 +421,10 @@ export function LeadsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">Origem</Label>
-            <Select value={filters.source ?? ''} onValueChange={v => setFilters(f => ({ ...f, source: v || undefined }))}>
+            <Select value={filters.source ?? '__all__'} onValueChange={v => setFilters(f => ({ ...f, source: v === '__all__' ? undefined : v }))}>
               <SelectTrigger className="w-32 h-7 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="__all__">Todas</SelectItem>
                 {['manual','whatsapp','website','referral','paid','organic','form','funnel'].map(s => (
                   <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
                 ))}

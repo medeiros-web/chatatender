@@ -252,10 +252,10 @@ function FunnelFormDialog({
                   </div>
                   <div className="space-y-1.5">
                     <Label>Produto associado</Label>
-                    <Select defaultValue={watch('product_id') ?? ''} onValueChange={v => setValue('product_id', v)}>
+                    <Select defaultValue={watch('product_id') || '__none__'} onValueChange={v => setValue('product_id', v === '__none__' ? '' : v)}>
                       <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
+                        <SelectItem value="__none__">Nenhum</SelectItem>
                         {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                       </SelectContent>
                     </Select>

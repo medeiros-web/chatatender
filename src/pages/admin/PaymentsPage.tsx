@@ -453,12 +453,12 @@ function TransactionsTab() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Select value={provider} onValueChange={setProvider}>
+        <Select value={provider || '__all__'} onValueChange={v => setProvider(v === '__all__' ? '' : v)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Todas plataformas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="__all__">Todas</SelectItem>
             {PROVIDERS.map(p => (
               <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
             ))}

@@ -185,12 +185,12 @@ function CommissionsTab() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Select value={statusFilter} onValueChange={v => setStatusFilter(v as any)}>
+        <Select value={statusFilter || '__all__'} onValueChange={v => setStatusFilter(v === '__all__' ? '' : v as any)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Todos status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="__all__">Todos</SelectItem>
             <SelectItem value="pending">Pendentes</SelectItem>
             <SelectItem value="approved">Aprovadas</SelectItem>
             <SelectItem value="paid">Pagas</SelectItem>

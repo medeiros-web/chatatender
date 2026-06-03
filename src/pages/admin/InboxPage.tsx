@@ -237,10 +237,10 @@ function TransferDialog({ convId, open, onClose }: { convId: string; open: boole
         <DialogBody className="space-y-4">
           <div className="space-y-1.5">
             <Label>Para agente</Label>
-            <Select value={toUserId} onValueChange={v => { setToUserId(v); if (v) setToSectorId('') }}>
+            <Select value={toUserId || '__none__'} onValueChange={v => { setToUserId(v === '__none__' ? '' : v); if (v && v !== '__none__') setToSectorId('') }}>
               <SelectTrigger><SelectValue placeholder="Selecionar agente" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="__none__">Nenhum</SelectItem>
                 {members.map(m => (
                   <SelectItem key={m.user_id} value={m.user_id}>
                     {m.full_name ?? m.user_id}
@@ -254,10 +254,10 @@ function TransferDialog({ convId, open, onClose }: { convId: string; open: boole
           </div>
           <div className="space-y-1.5">
             <Label>Para setor</Label>
-            <Select value={toSectorId} onValueChange={v => { setToSectorId(v); if (v) setToUserId('') }}>
+            <Select value={toSectorId || '__none__'} onValueChange={v => { setToSectorId(v === '__none__' ? '' : v); if (v && v !== '__none__') setToUserId('') }}>
               <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="__none__">Nenhum</SelectItem>
                 {sectors.filter(s => s.is_active).map(s => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
@@ -548,13 +548,13 @@ export function InboxPage() {
 
           {/* Filtro por instância WhatsApp */}
           {waInstances.length > 0 && (
-            <Select value={filterInstance} onValueChange={setFilterInstance}>
+            <Select value={filterInstance || '__all__'} onValueChange={v => setFilterInstance(v === '__all__' ? '' : v)}>
               <SelectTrigger className="h-7 text-xs mb-2">
                 <Phone className="h-3 w-3 text-success mr-1.5" />
                 <SelectValue placeholder="Todas as instâncias WA" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as instâncias</SelectItem>
+                <SelectItem value="__all__">Todas as instâncias</SelectItem>
                 {waInstances.map(i => (
                   <SelectItem key={i.id} value={i.id}>
                     <div className="flex items-center gap-2">
