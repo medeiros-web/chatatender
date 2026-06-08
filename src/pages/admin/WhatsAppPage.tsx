@@ -131,7 +131,6 @@ function InstanceFormDialog({
 }: { open: boolean; onClose: () => void; editing?: EvolutionInstance }) {
   const createInstance = useCreateInstance()
   const updateInstance = useUpdateInstance()
-  const createOnServer = useConnectInstance()
   const [showKey, setShowKey] = useState(false)
   const [provider, setProvider] = useState<EvolutionProvider>(editing?.provider ?? 'evolution_api')
 
@@ -187,9 +186,7 @@ function InstanceFormDialog({
     if (editing) {
       await updateInstance.mutateAsync({ id: editing.id, ...values })
     } else {
-      const inst = await createInstance.mutateAsync(values)
-      // Tenta criar no servidor Evolution automaticamente
-      await createOnServer.mutateAsync(inst.id).catch(() => { /* ignora se servidor offline */ })
+      await createInstance.mutateAsync(values)
     }
     onClose()
   }
