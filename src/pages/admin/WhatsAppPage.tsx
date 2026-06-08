@@ -135,7 +135,7 @@ function InstanceFormDialog({
   const [showKey, setShowKey] = useState(false)
   const [provider, setProvider] = useState<EvolutionProvider>(editing?.provider ?? 'evolution_api')
 
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<InstanceValues>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<InstanceValues>({
     resolver: zodResolver(instanceSchema),
     defaultValues: {
       display_name: editing?.display_name ?? '',
@@ -146,6 +146,20 @@ function InstanceFormDialog({
       auto_reply: editing?.auto_reply ?? true,
     },
   })
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        display_name: editing?.display_name ?? '',
+        instance_name: editing?.instance_name ?? '',
+        provider: editing?.provider ?? 'evolution_api',
+        server_url: editing?.server_url ?? '',
+        api_key: editing?.api_key ?? '',
+        auto_reply: editing?.auto_reply ?? true,
+      })
+      setProvider(editing?.provider ?? 'evolution_api')
+    }
+  }, [open, editing])
 
   const autoReply = watch('auto_reply')
   const currentProvider = watch('provider')
