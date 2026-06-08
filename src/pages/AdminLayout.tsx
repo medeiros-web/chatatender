@@ -11,6 +11,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import { FAB } from '@/components/mobile/FAB'
@@ -39,6 +40,7 @@ export function AdminLayout() {
   }
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar — hidden on mobile */}
       {!isMobile && (
@@ -120,6 +122,7 @@ export function AdminLayout() {
         </>
       )}
     </div>
+    </TooltipProvider>
   )
 }
 

@@ -1,11 +1,14 @@
 import { useState, useRef } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import {
   useSAUsers, useSetUserStatus,
   usePlatformSettings, useUpdatePlatformSetting,
   useSystemHealth, useRunHealthChecks,
-  useAuditLogs,
+  useAuditLogs, useSAOrganizations,
 } from '@/hooks/useSuperAdmin'
 import { useDeleteLead } from '@/hooks/useLeads'
 import { supabase } from '@/lib/supabase'
@@ -25,10 +28,10 @@ import {
 import { cn } from '@/lib/utils'
 import {
   Settings, Users, Trash2, RefreshCw, Shield, Activity,
-  Search, ChevronDown, CheckCircle2, XCircle, AlertTriangle,
-  Database, Zap, Lock, UserCog, Eye, Building2,
-  MoreVertical, UserX, UserCheck, Edit2, Plus, Save,
-  Globe, Clock, Bell, Palette, BarChart3,
+  Search, CheckCircle2, XCircle, AlertTriangle,
+  Database, Zap, UserCog,
+  MoreVertical, UserX, UserCheck, Plus, Save,
+  Globe, Bell, BarChart3, Eye, EyeOff,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -47,6 +50,40 @@ function fmtDate(iso: string | null) {
 function initials(name: string | null) {
   if (!name) return '?'
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+}
+
+// ── Create User hook ──────────────────────────────────────────────────────────
+const createUserSchema = z.object({
+  full_name:       z.string().min(2, 'Mínimo 2 caracteres'),
+  email:           z.string().email('E-mail inválido'),
+  password:        z.string().min(8, 'Mínimo 8 caracteres'),
+  role:            z.enum(['super_admin', 'admin', 'manager', 'agent']),
+  organization_id: z.string().uuid('Selecione uma organização'),
+})
+type CreateUserValues = z.infer<typeof createUserSchema>
+
+function useCreateUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (values: CreateUserValues) => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify(values),
+        },
+      )
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data.error ?? 'Erro ao criar usuário')
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa_users'] }),
+  })
 }
 
 // ── SA leads hook (cross-org) ─────────────────────────────────────────────────
@@ -337,9 +374,35 @@ function TabUsuarios() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [showCreate, setShowCreate] = useState(false)
   const { data: users = [], isLoading, refetch } = useSAUsers()
+  const { data: orgs = [] } = useSAOrganizations()
   const setStatus = useSetUserStatus()
+  const createUser = useCreateUser()
   const [confirmUser, setConfirmUser] = useState<{ id: string; action: 'suspended' | 'active' | 'rejected'; name: string } | null>(null)
+  const [showPass, setShowPass] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [createSuccess, setCreateSuccess] = useState('')
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateUserValues>({ resolver: zodResolver(createUserSchema) })
+
+  const onCreateSubmit = async (values: CreateUserValues) => {
+    setCreateError('')
+    setCreateSuccess('')
+    try {
+      await createUser.mutateAsync(values)
+      setCreateSuccess(`Usuário ${values.email} criado com sucesso!`)
+      reset()
+      setTimeout(() => { setShowCreate(false); setCreateSuccess('') }, 2000)
+    } catch (e: any) {
+      setCreateError(e.message)
+    }
+  }
 
   const filtered = users.filter(u => {
     const q = search.toLowerCase()
@@ -379,7 +442,10 @@ function TabUsuarios() {
         <Button size="sm" variant="ghost" onClick={() => refetch()} className="h-8 gap-1.5">
           <RefreshCw className="h-3.5 w-3.5" /> Atualizar
         </Button>
-        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} usuário(s)</span>
+        <Button size="sm" className="h-8 gap-1.5 ml-auto" onClick={() => { setShowCreate(true); setCreateError(''); setCreateSuccess('') }}>
+          <Plus className="h-3.5 w-3.5" /> Novo usuário
+        </Button>
+        <span className="text-xs text-muted-foreground">{filtered.length} usuário(s)</span>
       </div>
 
       <Card>
@@ -454,6 +520,100 @@ function TabUsuarios() {
           </table>
         </div>
       </Card>
+
+      {/* Create user dialog */}
+      <Dialog open={showCreate} onOpenChange={v => { setShowCreate(v); setCreateError(''); setCreateSuccess('') }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" /> Criar novo usuário
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onCreateSubmit)} className="space-y-4 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Nome completo *</label>
+              <Input {...register('full_name')} placeholder="João da Silva" />
+              {errors.full_name && <p className="text-xs text-destructive">{errors.full_name.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">E-mail *</label>
+              <Input {...register('email')} type="email" placeholder="joao@empresa.com" />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Senha inicial *</label>
+              <div className="relative">
+                <Input
+                  {...register('password')}
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPass(p => !p)}
+                >
+                  {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Role *</label>
+                <select
+                  {...register('role')}
+                  className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">Selecione…</option>
+                  <option value="agent">Agent</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+                {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Organização *</label>
+                <select
+                  {...register('organization_id')}
+                  className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">Selecione…</option>
+                  {orgs.map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+                {errors.organization_id && <p className="text-xs text-destructive">{errors.organization_id.message}</p>}
+              </div>
+            </div>
+
+            {createError && (
+              <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <XCircle className="h-4 w-4 shrink-0" /> {createError}
+              </div>
+            )}
+            {createSuccess && (
+              <div className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> {createSuccess}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isSubmitting} className="gap-1.5">
+                {isSubmitting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {isSubmitting ? 'Criando…' : 'Criar usuário'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirm dialog */}
       <Dialog open={!!confirmUser} onOpenChange={() => setConfirmUser(null)}>
