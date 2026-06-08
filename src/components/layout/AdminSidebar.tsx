@@ -38,7 +38,7 @@ const ADMIN_ITEMS: NavItem[] = [
   { label: 'Comissões', to: '/admin/commissions', icon: DollarSign, adminOnly: true },
   { label: 'WhatsApp', to: '/admin/whatsapp', icon: MessageSquare, adminOnly: true },
   { label: 'E-mail / Templates', to: '/admin/email-templates', icon: Mail, adminOnly: true },
-  { label: 'Configurações', to: '/admin/settings', icon: Settings, adminOnly: true, soon: true },
+  { label: 'Configurações', to: '/admin/settings', icon: Settings, adminOnly: true },
 ]
 
 interface SidebarProps {
