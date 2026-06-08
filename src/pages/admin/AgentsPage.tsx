@@ -5,7 +5,8 @@ import { z } from 'zod'
 import {
   Bot, Plus, Pencil, Eye, EyeOff, Check, AlertCircle,
   Zap, Shield, Settings, Brain, Key, BarChart3,
-  ToggleRight, ToggleLeft, Flame, DollarSign, Activity
+  ToggleRight, ToggleLeft, Flame, DollarSign, Activity,
+  MessageSquare, ChevronDown, ChevronUp, Lightbulb, Copy
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,6 +75,40 @@ const ALL_TOOLS = [
 const TOOL_GROUPS = [...new Set(ALL_TOOLS.map(t => t.group))]
 
 // ── Agent Form ────────────────────────────────────────────────
+const PROMPT_TEMPLATES = [
+  {
+    label: 'Vendas B2C',
+    icon: '🛒',
+    prompt: `Você é um assistente de vendas especialista, educado e empático. Seu objetivo é entender as necessidades do cliente e apresentar as melhores soluções de forma clara e objetiva.
+
+- Sempre cumprimente pelo nome quando disponível
+- Faça perguntas para entender a necessidade antes de oferecer produtos
+- Seja conciso: máximo 3 parágrafos por mensagem
+- Nunca pressione o cliente; respeite o ritmo dele
+- Em caso de dúvida técnica, ofereça transferir para um especialista`,
+  },
+  {
+    label: 'Suporte técnico',
+    icon: '🔧',
+    prompt: `Você é um agente de suporte técnico especializado. Ajude o cliente a resolver problemas de forma rápida e eficiente.
+
+- Identifique o problema com perguntas diretas (modelo, versão, erro exato)
+- Forneça passos numerados e claros
+- Confirme se o problema foi resolvido antes de encerrar
+- Registre sempre o ticket no sistema antes de finalizar`,
+  },
+  {
+    label: 'Atendimento geral',
+    icon: '💬',
+    prompt: `Você é um atendente virtual cordial e prestativo. Responda com clareza, gentileza e objetividade.
+
+- Trate todos com respeito e atenção
+- Resolva dúvidas frequentes de forma autônoma
+- Encaminhe ao time humano quando necessário
+- Mantenha um tom sempre positivo e acolhedor`,
+  },
+]
+
 const agentSchema = z.object({
   name: z.string().min(1, 'Obrigatório'),
   tone: z.string(),
@@ -84,6 +119,7 @@ const agentSchema = z.object({
   max_tokens: z.number().min(50).max(2000),
   spin_enabled: z.boolean(),
   proactive_scheduling: z.boolean(),
+  persona_description: z.string().optional(),
   business_context: z.string().optional(),
   objection_handling: z.string().optional(),
   system_prompt_extra: z.string().optional(),
@@ -104,6 +140,8 @@ function AgentFormDialog({
     existingAgent?.enabled_tools ?? ['switch_to_agent', 'criar_nota', 'registrar_interesse', 'check_available_slots', 'schedule_meeting', 'agendar_followup']
   )
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>(existingAgent?.provider ?? 'anthropic')
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [copiedTemplate, setCopiedTemplate] = useState<string | null>(null)
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<AgentValues>({
     resolver: zodResolver(agentSchema),
@@ -117,6 +155,7 @@ function AgentFormDialog({
       max_tokens: existingAgent?.max_tokens ?? 400,
       spin_enabled: existingAgent?.spin_enabled ?? true,
       proactive_scheduling: existingAgent?.proactive_scheduling ?? true,
+      persona_description: existingAgent?.persona_description ?? '',
       business_context: existingAgent?.business_context ?? '',
       objection_handling: existingAgent?.objection_handling ?? '',
       system_prompt_extra: existingAgent?.system_prompt_extra ?? '',
@@ -127,6 +166,10 @@ function AgentFormDialog({
   const spinEnabled = watch('spin_enabled')
   const proScheduling = watch('proactive_scheduling')
   const temp = watch('temperature')
+  const personaDesc = watch('persona_description') ?? ''
+  const businessCtx = watch('business_context') ?? ''
+  const objHandling = watch('objection_handling') ?? ''
+  const sysPrompt = watch('system_prompt_extra') ?? ''
 
   const providerModels = AI_PROVIDERS.find(p => p.value === selectedProvider)?.models ?? []
 
@@ -134,6 +177,13 @@ function AgentFormDialog({
     setEnabledTools(prev =>
       prev.includes(name) ? prev.filter(t => t !== name) : [...prev, name]
     )
+  }
+
+  const applyTemplate = (templatePrompt: string, label: string) => {
+    setValue('persona_description', templatePrompt)
+    setCopiedTemplate(label)
+    setShowTemplates(false)
+    setTimeout(() => setCopiedTemplate(null), 2000)
   }
 
   const onSubmit = async (values: AgentValues) => {
@@ -159,13 +209,137 @@ function AgentFormDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogBody>
-            <Tabs defaultValue="persona">
+            <Tabs defaultValue="prompts">
               <TabsList className="mb-4">
+                <TabsTrigger value="prompts" className="text-xs">
+                  <MessageSquare className="h-3 w-3 mr-1" /> Prompts
+                </TabsTrigger>
                 <TabsTrigger value="persona" className="text-xs">Persona</TabsTrigger>
                 <TabsTrigger value="model" className="text-xs">Modelo IA</TabsTrigger>
                 <TabsTrigger value="tools" className="text-xs">Ferramentas</TabsTrigger>
-                <TabsTrigger value="context" className="text-xs">Contexto</TabsTrigger>
               </TabsList>
+
+              {/* Prompts */}
+              <TabsContent value="prompts" className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+
+                {/* Templates rápidos */}
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates(v => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-secondary/40 transition-colors"
+                  >
+                    <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Lightbulb className="h-3.5 w-3.5 text-warning" />
+                      Templates rápidos
+                      {copiedTemplate && (
+                        <span className="text-[10px] rounded px-1.5 py-0.5 bg-success/15 text-success font-semibold">
+                          ✓ {copiedTemplate} aplicado
+                        </span>
+                      )}
+                    </span>
+                    {showTemplates
+                      ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                      : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    }
+                  </button>
+                  {showTemplates && (
+                    <div className="border-t border-border p-3 grid grid-cols-3 gap-2">
+                      {PROMPT_TEMPLATES.map(t => (
+                        <button
+                          key={t.label}
+                          type="button"
+                          onClick={() => applyTemplate(t.prompt, t.label)}
+                          className="flex flex-col gap-1 rounded-lg border border-border p-2.5 text-left hover:border-primary/40 hover:bg-primary/5 transition-all"
+                        >
+                          <span className="text-base leading-none">{t.icon}</span>
+                          <span className="text-xs font-medium text-foreground">{t.label}</span>
+                          <span className="text-[10px] text-muted-foreground line-clamp-2">
+                            {t.prompt.split('\n')[0]}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Prompt Principal */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                      Prompt principal (Persona)
+                    </Label>
+                    <span className={cn(
+                      'text-[10px] font-mono',
+                      personaDesc.length > 1800 ? 'text-destructive' : personaDesc.length > 1200 ? 'text-warning' : 'text-muted-foreground'
+                    )}>
+                      {personaDesc.length} / 2000
+                    </span>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[160px] rounded-xl border border-input bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono leading-relaxed"
+                    placeholder={`Defina aqui a personalidade e comportamento principal do agente.
+
+Exemplo:
+Você é um assistente de vendas especialista e empático. Seu objetivo é entender as necessidades do cliente e apresentar as melhores soluções de forma clara.
+
+- Sempre cumprimente pelo nome
+- Faça perguntas antes de oferecer produtos
+- Seja conciso (máx 3 parágrafos por mensagem)
+- Nunca pressione o cliente`}
+                    maxLength={2000}
+                    {...register('persona_description')}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Este prompt define a identidade base do agente. Será combinado com o contexto do negócio e as instruções de venda.
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Contexto do negócio */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Contexto do negócio / produto</Label>
+                    <span className="text-[10px] font-mono text-muted-foreground">{businessCtx.length} / 800</span>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[80px] rounded-xl border border-input bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    placeholder="Descreva o produto/serviço, diferenciais, preços, público-alvo, políticas de uso..."
+                    maxLength={800}
+                    {...register('business_context')}
+                  />
+                </div>
+
+                {/* Tratamento de objeções */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Tratamento de objeções</Label>
+                    <span className="text-[10px] font-mono text-muted-foreground">{objHandling.length} / 600</span>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[70px] rounded-xl border border-input bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    placeholder={`Como responder às objeções mais comuns:\n"Está caro" → ...\n"Preciso pensar" → ...\n"Vou ver com minha empresa" → ...`}
+                    maxLength={600}
+                    {...register('objection_handling')}
+                  />
+                </div>
+
+                {/* Instruções extras */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Instruções adicionais</Label>
+                    <span className="text-[10px] font-mono text-muted-foreground">{sysPrompt.length} / 400</span>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[60px] rounded-xl border border-input bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    placeholder="Regras específicas, restrições, palavras proibidas, formato de resposta esperado..."
+                    maxLength={400}
+                    {...register('system_prompt_extra')}
+                  />
+                </div>
+              </TabsContent>
 
               {/* Persona */}
               <TabsContent value="persona" className="space-y-4 max-h-[50vh] overflow-y-auto">
@@ -334,33 +508,6 @@ function AgentFormDialog({
                 ))}
               </TabsContent>
 
-              {/* Contexto */}
-              <TabsContent value="context" className="space-y-4 max-h-[50vh] overflow-y-auto">
-                <div className="space-y-1.5">
-                  <Label>Contexto do negócio</Label>
-                  <textarea
-                    className="w-full min-h-[80px] rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    placeholder="Descreva o produto/serviço, diferenciais, público-alvo..."
-                    {...register('business_context')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Tratamento de objeções</Label>
-                  <textarea
-                    className="w-full min-h-[80px] rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    placeholder="Como responder 'caro demais', 'preciso pensar', 'vou ver com a empresa'..."
-                    {...register('objection_handling')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Instruções extras (system prompt)</Label>
-                  <textarea
-                    className="w-full min-h-[60px] rounded-lg border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    placeholder="Instruções específicas adicionais para o agente..."
-                    {...register('system_prompt_extra')}
-                  />
-                </div>
-              </TabsContent>
             </Tabs>
           </DialogBody>
           <DialogFooter>
