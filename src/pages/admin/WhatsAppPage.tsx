@@ -132,36 +132,43 @@ function InstanceFormDialog({
   const createInstance = useCreateInstance()
   const updateInstance = useUpdateInstance()
   const [showKey, setShowKey] = useState(false)
-  const [provider, setProvider] = useState<EvolutionProvider>(editing?.provider ?? 'evolution_api')
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<InstanceValues>({
     resolver: zodResolver(instanceSchema),
     defaultValues: {
-      display_name: editing?.display_name ?? '',
-      instance_name: editing?.instance_name ?? '',
-      provider: editing?.provider ?? 'evolution_api',
-      server_url: editing?.server_url ?? '',
-      api_key: editing?.api_key ?? '',
-      auto_reply: editing?.auto_reply ?? true,
+      display_name: '',
+      instance_name: '',
+      provider: 'evolution_api',
+      server_url: '',
+      api_key: '',
+      auto_reply: true,
     },
   })
 
+  // Sempre que o modal abre (ou o editing muda), recarrega os valores da instância correta
   useEffect(() => {
-    if (open) {
-      reset({
-        display_name: editing?.display_name ?? '',
-        instance_name: editing?.instance_name ?? '',
-        provider: editing?.provider ?? 'evolution_api',
-        server_url: editing?.server_url ?? '',
-        api_key: editing?.api_key ?? '',
-        auto_reply: editing?.auto_reply ?? true,
-      })
-      setProvider(editing?.provider ?? 'evolution_api')
-    }
-  }, [open, editing])
+    if (!open) return
+    reset({
+      display_name:  editing?.display_name  ?? '',
+      instance_name: editing?.instance_name ?? '',
+      provider:      editing?.provider      ?? 'evolution_api',
+      server_url:    editing?.server_url    ?? '',
+      api_key:       editing?.api_key       ?? '',
+      auto_reply:    editing?.auto_reply    ?? true,
+    })
+    setShowKey(false)
+  }, [open, editing?.id])   // usa editing.id como dep — muda apenas quando é outra instância
 
   const autoReply = watch('auto_reply')
-  const currentProvider = watch('provider')
+  const currentProvider = watch('provider') as EvolutionProvider
+
+  // Ao trocar de provider, limpa URL e chave para não contaminar entre tipos
+  function handleProviderChange(p: EvolutionProvider) {
+    if (p === currentProvider) return
+    setValue('provider', p, { shouldValidate: false })
+    setValue('server_url', '', { shouldValidate: false })
+    setValue('api_key',    '', { shouldValidate: false })
+  }
 
   const providerDocs: Record<EvolutionProvider, { name: string; docUrl: string; authLabel: string; authPlaceholder: string; color: string }> = {
     evolution_api: {
@@ -216,7 +223,7 @@ function InstanceFormDialog({
                     <button
                       key={p}
                       type="button"
-                      onClick={() => { setValue('provider', p); setProvider(p) }}
+                      onClick={() => handleProviderChange(p)}
                       className={cn(
                         'flex flex-col items-start gap-1.5 rounded-xl border-2 p-4 text-left transition-all',
                         isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -470,7 +477,7 @@ function InstanceCard({ instance }: { instance: EvolutionInstance }) {
 
       {/* Edit Dialog */}
       {editOpen && (
-        <InstanceFormDialog open={editOpen} onClose={() => setEditOpen(false)} editing={instance} />
+        <InstanceFormDialog key={instance.id} open={editOpen} onClose={() => setEditOpen(false)} editing={instance} />
       )}
 
       {/* Delete Confirm */}
