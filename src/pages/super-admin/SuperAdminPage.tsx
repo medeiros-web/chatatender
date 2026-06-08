@@ -31,8 +31,11 @@ import { cn } from '@/lib/utils'
 import {
   Building2, Users, CreditCard, TrendingUp, Activity,
   Plus, Trash2, Edit2, CheckCircle2, XCircle, RefreshCw,
-  Eye, EyeOff, Copy, ChevronDown,
+  Eye, EyeOff, Copy, ChevronDown, ExternalLink, AppWindow,
 } from 'lucide-react'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -131,6 +134,47 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
   return <td className={cn('px-4 py-3 text-sm text-foreground', className)}>{children}</td>
 }
 
+// ── Apps Quick Access ─────────────────────────────────────────────────────────
+
+const SA_APP_LINKS = [
+  { label: 'Painel.chatatender.ia.br',        href: 'https://painel.chatatender.ia.br' },
+  { label: 'ia.chatatender.com.br',           href: 'https://ia.chatatender.com.br' },
+  { label: 'webhook.chatatender.ia.br/login', href: 'https://webhook.chatatender.ia.br/login' },
+  { label: 'ia.advogadosdefesa.com.br',       href: 'https://ia.advogadosdefesa.com.br' },
+]
+
+function SAQuickAccessApps() {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">Acesso rápido</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-accent transition-colors text-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-500/10 text-pink-500">
+                <AppWindow className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-medium text-muted-foreground leading-tight">APPs (Agente de IA)</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-64">
+            {SA_APP_LINKS.map(app => (
+              <DropdownMenuItem key={app.href} asChild>
+                <a href={app.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+                  <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                  <span className="text-xs truncate">{app.label}</span>
+                </a>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export function SADashboard() {
@@ -148,6 +192,7 @@ export function SADashboard() {
 
   return (
     <Section title="Visão geral da plataforma">
+      <SAQuickAccessApps />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {kpis.map(k => (
           <Card key={k.label}>

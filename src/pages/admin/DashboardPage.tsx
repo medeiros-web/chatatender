@@ -9,8 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Users, MessageSquare, DollarSign, Trophy, TrendingUp, TrendingDown,
   Target, Zap, FileText, Calendar, Bot, CreditCard, Building2,
-  Inbox, BarChart3, ArrowRight, CheckCircle2,
+  Inbox, BarChart3, ArrowRight, CheckCircle2, ExternalLink, AppWindow,
 } from 'lucide-react'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -96,6 +99,38 @@ const QUICK_LINKS = [
   { label: 'Setores',     to: '/admin/sectors',      icon: Building2,   color: 'bg-indigo-500/10 text-indigo-500' },
 ]
 
+const APP_LINKS = [
+  { label: 'Painel.chatatender.ia.br',        href: 'https://painel.chatatender.ia.br' },
+  { label: 'ia.chatatender.com.br',           href: 'https://ia.chatatender.com.br' },
+  { label: 'webhook.chatatender.ia.br/login', href: 'https://webhook.chatatender.ia.br/login' },
+  { label: 'ia.advogadosdefesa.com.br',       href: 'https://ia.advogadosdefesa.com.br' },
+]
+
+function AppsButton() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-accent transition-colors text-center">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-500/10 text-pink-500">
+            <AppWindow className="h-4 w-4" />
+          </div>
+          <span className="text-[10px] font-medium text-muted-foreground leading-tight">APPs IA</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" className="w-64">
+        {APP_LINKS.map(app => (
+          <DropdownMenuItem key={app.href} asChild>
+            <a href={app.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+              <span className="text-xs truncate">{app.label}</span>
+            </a>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function QuickAccess() {
   return (
     <Card>
@@ -115,6 +150,7 @@ function QuickAccess() {
             <span className="text-[10px] font-medium text-muted-foreground leading-tight">{l.label}</span>
           </Link>
         ))}
+        <AppsButton />
       </CardContent>
     </Card>
   )
