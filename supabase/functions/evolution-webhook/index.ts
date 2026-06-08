@@ -133,45 +133,66 @@ async function handleEvolutionAPI(body: Record<string, unknown>, instanceRecord:
   return { ok: true, conversation_id: convId }
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS })
+}
+
 Deno.serve(async (req: Request) => {
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
-
-  const url = new URL(req.url)
-  const provider = url.searchParams.get('provider') ?? 'evolution_api'
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return new Response('Invalid JSON', { status: 400 })
-  }
-
-  // Identifica instância pela instance key no body
-  const instanceName = (body.instance as string)
-    ?? (body.data as Record<string, unknown>)?.instance as string
-    ?? ''
-
-  const { data: instanceRecord } = await supabase
-    .from('evolution_instances')
-    .select('id, organization_id, name, product_id')
-    .eq('instance_name', instanceName)
-    .single()
-
-  if (!instanceRecord) {
-    console.warn(`evolution-webhook: instância '${instanceName}' não encontrada`)
-    return new Response(JSON.stringify({ ok: true, warn: 'instance_not_found' }), {
-      headers: { 'Content-Type': 'application/json' }
+  // CORS preflight — status 204 must have null body
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
     })
   }
 
-  let result: Record<string, unknown>
-  if (provider === 'evolution_api' || provider === 'evolution_go') {
-    result = await handleEvolutionAPI(body, instanceRecord as Record<string, unknown>)
-  } else {
-    result = { ok: false, error: `provider '${provider}' not supported` }
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
-  return new Response(JSON.stringify(result), {
-    headers: { 'Content-Type': 'application/json' }
-  })
+  try {
+    const url = new URL(req.url)
+    const provider = url.searchParams.get('provider') ?? 'evolution_api'
+
+    let body: Record<string, unknown>
+    try {
+      body = await req.json()
+    } catch {
+      return jsonResponse({ error: 'Invalid JSON' }, 400)
+    }
+
+    // Identifica instância pela instance key no body
+    const instanceName = (body.instance as string)
+      ?? (body.data as Record<string, unknown>)?.instance as string
+      ?? ''
+
+    const { data: instanceRecord } = await supabase
+      .from('evolution_instances')
+      .select('id, organization_id, name, product_id')
+      .eq('instance_name', instanceName)
+      .single()
+
+    if (!instanceRecord) {
+      console.warn(`evolution-webhook: instância '${instanceName}' não encontrada`)
+      return jsonResponse({ ok: true, warn: 'instance_not_found' })
+    }
+
+    let result: Record<string, unknown>
+    if (provider === 'evolution_api' || provider === 'evolution_go') {
+      result = await handleEvolutionAPI(body, instanceRecord as Record<string, unknown>)
+    } else {
+      result = { ok: false, error: `provider '${provider}' not supported` }
+    }
+
+    return jsonResponse(result)
+  } catch (err) {
+    console.error('evolution-webhook unhandled error:', err)
+    return jsonResponse({ ok: false, error: String(err) }, 500)
+  }
 })
