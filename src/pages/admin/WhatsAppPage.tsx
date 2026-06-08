@@ -250,7 +250,7 @@ function InstanceFormDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Nome da instância *</Label>
-                <Input placeholder="vendas-principal" {...register('instance_name')} disabled={!!editing} />
+                <Input placeholder="vendas-principal" {...register('instance_name')} />
                 {errors.instance_name && <p className="text-xs text-destructive">{errors.instance_name.message}</p>}
               </div>
             </div>
