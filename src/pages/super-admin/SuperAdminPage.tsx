@@ -149,14 +149,25 @@ function SAQuickAccessApps() {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold">Acesso rápido</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex items-center gap-3">
+        {/* WhatsApp button — destaque */}
+        <a
+          href="https://web.whatsapp.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all"
+        >
+          <AppWindow className="h-4 w-4" />
+          WhatsApp
+          <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+        </a>
+
+        {/* APPs dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-accent transition-colors text-center">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-500/10 text-pink-500">
-                <AppWindow className="h-4 w-4" />
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground leading-tight">APPs (Agente de IA)</span>
+            <button className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-pink-500/10 hover:bg-pink-500/20 text-pink-600 text-sm font-semibold transition-colors">
+              <AppWindow className="h-4 w-4" />
+              APPs (Agente de IA)
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64">

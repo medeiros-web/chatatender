@@ -99,6 +99,22 @@ const QUICK_LINKS = [
   { label: 'Setores',     to: '/admin/sectors',      icon: Building2,   color: 'bg-indigo-500/10 text-indigo-500' },
 ]
 
+function WhatsAppQuickBtn() {
+  return (
+    <a
+      href="https://web.whatsapp.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-emerald-50 transition-colors text-center ring-1 ring-emerald-200"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
+        <MessageSquare className="h-4 w-4 text-white" />
+      </div>
+      <span className="text-[10px] font-semibold text-emerald-600 leading-tight">WhatsApp</span>
+    </a>
+  )
+}
+
 const APP_LINKS = [
   { label: 'Painel.chatatender.ia.br',        href: 'https://painel.chatatender.ia.br' },
   { label: 'ia.chatatender.com.br',           href: 'https://ia.chatatender.com.br' },
@@ -150,6 +166,7 @@ function QuickAccess() {
             <span className="text-[10px] font-medium text-muted-foreground leading-tight">{l.label}</span>
           </Link>
         ))}
+        <WhatsAppQuickBtn />
         <AppsButton />
       </CardContent>
     </Card>

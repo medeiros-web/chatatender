@@ -10,6 +10,7 @@ import { SectorsPage } from '@/pages/admin/SectorsPage'
 import { ProductsPage } from '@/pages/admin/ProductsPage'
 import { ProductDetailPage } from '@/pages/admin/ProductDetailPage'
 import { LeadsPage } from '@/pages/admin/LeadsPage'
+import { CrmPage } from '@/pages/admin/CrmPage'
 import { InboxPage } from '@/pages/admin/InboxPage'
 import { WhatsAppPage } from '@/pages/admin/WhatsAppPage'
 import { AgentsPage } from '@/pages/admin/AgentsPage'
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="products"     element={<ProductsPage />} />
               <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="leads"        element={<LeadsPage />} />
+              <Route path="crm"          element={<CrmPage />} />
               <Route path="inbox"        element={<InboxPage />} />
               <Route path="whatsapp"     element={<WhatsAppPage />} />
               <Route path="agents"       element={<AgentsPage />} />
