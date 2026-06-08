@@ -13,8 +13,10 @@ function getDefaultBaseUrl(provider: string): string {
   const urls: Record<string, string> = {
     anthropic: 'https://api.anthropic.com',
     openai:    'https://api.openai.com',
-    google:    'https://generativelanguage.googleapis.com',
+    google:    'https://generativelanguage.googleapis.com/v1beta/openai',
     groq:      'https://api.groq.com/openai',
+    xai:       'https://api.x.ai',
+    deepseek:  'https://api.deepseek.com',
   }
   return urls[provider] ?? 'https://api.anthropic.com'
 }
@@ -94,9 +96,11 @@ export async function callAI(
   messages: Record<string, unknown>[],
   tools: Record<string, unknown>[]
 ): Promise<Record<string, unknown>> {
-  return config.provider === 'anthropic'
-    ? callAnthropic(config, systemPrompt, messages, tools)
-    : callOpenAICompat(config, systemPrompt, messages, tools)
+  if (config.provider === 'anthropic') {
+    return callAnthropic(config, systemPrompt, messages, tools)
+  }
+  // All other providers (openai, google, groq, xai, deepseek, custom) use OpenAI-compatible API
+  return callOpenAICompat(config, systemPrompt, messages, tools)
 }
 
 async function callAnthropic(

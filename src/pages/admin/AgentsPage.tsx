@@ -31,12 +31,14 @@ import {
 } from '@/hooks/useAgents'
 
 // ── Constants ────────────────────────────────────────────────
-const AI_PROVIDERS: { value: AIProvider; label: string; models: string[] }[] = [
-  { value: 'anthropic', label: 'Anthropic (Claude)', models: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'] },
-  { value: 'openai',    label: 'OpenAI (GPT)',       models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo'] },
-  { value: 'groq',      label: 'Groq (rápido)',      models: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'gemma2-9b-it'] },
-  { value: 'google',    label: 'Google (Gemini)',    models: ['gemini-1.5-flash', 'gemini-1.5-pro'] },
-  { value: 'custom',    label: 'Custom/Proxy',       models: [] },
+const AI_PROVIDERS: { value: AIProvider; label: string; models: string[]; badge?: string; color?: string }[] = [
+  { value: 'anthropic', label: 'Claude (Anthropic)', models: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'], color: '#D97757' },
+  { value: 'openai',    label: 'GPT (OpenAI)',        models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'o1-mini', 'o3-mini'], color: '#10A37F' },
+  { value: 'google',    label: 'Gemini (Google)',     models: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-pro'], color: '#4285F4' },
+  { value: 'xai',       label: 'Grok (xAI)',          models: ['grok-3-mini-beta', 'grok-3-beta', 'grok-2-latest'], badge: 'Novo', color: '#1DA1F2' },
+  { value: 'deepseek',  label: 'DeepSeek',            models: ['deepseek-chat', 'deepseek-reasoner'], badge: 'Econômico', color: '#2563EB' },
+  { value: 'groq',      label: 'Groq (velocidade)',   models: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'gemma2-9b-it'], color: '#FF7A00' },
+  { value: 'custom',    label: 'Custom / Proxy',       models: [] },
 ]
 
 const CAPABILITY_LABELS: Record<AICapability, string> = {
@@ -255,8 +257,9 @@ function AgentFormDialog({
                           'flex items-center gap-2 rounded-lg border-2 p-2.5 text-left transition-all',
                           selectedProvider === p.value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
                         )}>
-                        <div className={cn('h-2 w-2 rounded-full', selectedProvider === p.value ? 'bg-primary' : 'bg-muted-foreground')} />
-                        <span className={cn('text-xs font-medium', selectedProvider === p.value ? 'text-primary' : 'text-foreground')}>{p.label}</span>
+                        <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedProvider === p.value ? (p.color ?? 'var(--primary)') : 'var(--muted-foreground)' }} />
+                        <span className={cn('text-xs font-medium flex-1', selectedProvider === p.value ? 'text-primary' : 'text-foreground')}>{p.label}</span>
+                        {p.badge && <span className="text-[9px] rounded px-1 py-0.5 bg-primary/10 text-primary font-semibold">{p.badge}</span>}
                       </button>
                     ))}
                   </div>
@@ -404,10 +407,16 @@ function CredentialsPanel() {
           const isAdding = adding === provider.value
 
           return (
-            <div key={provider.value} className="flex items-center gap-3 rounded-xl border border-border p-3">
-              <div className={cn('h-2.5 w-2.5 rounded-full flex-shrink-0', cred?.is_active ? 'bg-success' : 'bg-muted-foreground')} />
+            <div key={provider.value} className={cn('flex items-center gap-3 rounded-xl border p-3 transition-colors', cred?.is_active ? 'border-success/30 bg-success/5' : 'border-border')}>
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${provider.color}20` }}>
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cred?.is_active ? '#22c55e' : (provider.color ?? '#94a3b8') }} />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{provider.label}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">{provider.label}</p>
+                  {provider.badge && <span className="text-[9px] rounded px-1.5 py-0.5 bg-primary/10 text-primary font-semibold">{provider.badge}</span>}
+                </div>
                 {cred ? (
                   <p className="text-xs text-muted-foreground font-mono">
                     {showKey[provider.value] ? cred.api_key : '••••••••' + cred.api_key.slice(-4)}

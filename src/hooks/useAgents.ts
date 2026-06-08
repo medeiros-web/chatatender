@@ -5,7 +5,7 @@ import { useAuth } from './useAuth'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any
 
-export type AIProvider = 'anthropic' | 'openai' | 'google' | 'groq' | 'custom'
+export type AIProvider = 'anthropic' | 'openai' | 'google' | 'groq' | 'xai' | 'deepseek' | 'custom'
 
 // Labels públicos para a UI
 export const TOOLS_SCHEMA_LABELS: Record<string, string> = {

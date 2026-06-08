@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +6,7 @@ import {
   Phone, Plus, Wifi, WifiOff, QrCode, RefreshCw, Trash2,
   Pencil, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff,
   MessageSquare, Zap, Settings, ExternalLink, Copy, Check,
-  Globe, Key, ChevronDown, Bot
+  Globe, Key, ChevronDown, Bot, Sparkles, ShieldCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +26,16 @@ import {
   useRefreshStatus, useSetWebhook, usePollQRCode,
   type EvolutionInstance, type EvolutionProvider,
 } from '@/hooks/useEvolution'
+import { useAICredentials } from '@/hooks/useAgents'
+
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: 'Claude',
+  openai:    'GPT',
+  google:    'Gemini',
+  groq:      'Groq',
+  xai:       'Grok',
+  deepseek:  'DeepSeek',
+}
 
 // ── Status config ─────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType; pulse?: boolean }> = {
@@ -41,69 +51,154 @@ function QRCodeModal({
   instance, open, onClose,
 }: { instance: EvolutionInstance; open: boolean; onClose: () => void }) {
   const { data: polled } = usePollQRCode(open ? instance.id : null)
+  const connectInstance = useConnectInstance()
 
   const current = polled ?? instance
   const isConnected = current.status === 'connected'
   const hasQR = !!current.qr_code_base64
 
+  // Countdown timer — resets when QR image changes
+  const [timeLeft, setTimeLeft] = useState(60)
+  const prevQrRef = useRef<string | null>(null)
+
   useEffect(() => {
-    if (isConnected) {
-      setTimeout(onClose, 2000)
+    if (current.qr_code_base64 !== prevQrRef.current) {
+      prevQrRef.current = current.qr_code_base64 ?? null
+      setTimeLeft(60)
     }
+  }, [current.qr_code_base64])
+
+  useEffect(() => {
+    if (!hasQR || isConnected || timeLeft <= 0) return
+    const t = setTimeout(() => setTimeLeft(n => n - 1), 1000)
+    return () => clearTimeout(t)
+  }, [hasQR, isConnected, timeLeft])
+
+  useEffect(() => {
+    if (isConnected) setTimeout(onClose, 2500)
   }, [isConnected, onClose])
+
+  const expired = timeLeft <= 0 && hasQR && !isConnected
+  const progress = (timeLeft / 60) * 100
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-success" />
+            <div className="h-7 w-7 rounded-lg bg-[#25D366]/15 flex items-center justify-center">
+              <Phone className="h-4 w-4 text-[#25D366]" />
+            </div>
             Conectar WhatsApp
           </DialogTitle>
           <DialogDescription>
-            Escaneie o QR code com seu WhatsApp para conectar a instância
-            <strong className="text-foreground"> {instance.display_name ?? instance.instance_name}</strong>.
+            Instância <strong className="text-foreground">{instance.display_name ?? instance.instance_name}</strong>
+            {' · '}{instance.provider === 'evolution_go' ? 'Evolution GO' : 'Evolution API'}
           </DialogDescription>
         </DialogHeader>
+
         <DialogBody className="space-y-4">
           {isConnected ? (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <div className="h-16 w-16 rounded-full bg-success/20 flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-success" />
+            /* ── CONECTADO ── */
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full bg-success/15 flex items-center justify-center">
+                  <CheckCircle2 className="h-10 w-10 text-success" />
+                </div>
+                <div className="absolute inset-0 rounded-full bg-success/20 animate-ping" />
               </div>
-              <p className="font-semibold text-foreground">Conectado com sucesso!</p>
-              {current.phone_number && (
-                <p className="text-sm text-muted-foreground">{current.phone_number}</p>
-              )}
+              <div className="text-center space-y-1">
+                <p className="font-bold text-lg text-foreground">WhatsApp conectado!</p>
+                {current.phone_number && (
+                  <p className="text-sm text-success font-medium">{current.phone_number}</p>
+                )}
+                <p className="text-xs text-muted-foreground">Fechando automaticamente...</p>
+              </div>
             </div>
           ) : hasQR ? (
+            /* ── QR CODE ── */
             <div className="flex flex-col items-center gap-3">
-              <div className="rounded-xl border-4 border-primary/20 p-1 bg-white">
+              {/* QR image */}
+              <div className={cn(
+                'relative rounded-2xl border-4 p-1.5 bg-white shadow-lg transition-all',
+                expired ? 'border-destructive/40 opacity-50' : 'border-[#25D366]/40'
+              )}>
                 <img
                   src={`data:image/png;base64,${current.qr_code_base64}`}
                   alt="QR Code WhatsApp"
-                  className="h-52 w-52"
+                  className="h-52 w-52 rounded-xl"
                 />
+                {expired && (
+                  <div className="absolute inset-0 rounded-xl flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
+                    <p className="text-sm font-semibold text-foreground">QR expirado</p>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                Atualizando a cada 5 segundos...
-              </div>
-              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">Como conectar:</p>
-                <p>1. Abra o WhatsApp no celular</p>
-                <p>2. Toque em ⋮ (três pontos) → Dispositivos conectados</p>
-                <p>3. Toque em <strong>Conectar um dispositivo</strong></p>
-                <p>4. Escaneie o QR code acima</p>
+
+              {/* Timer */}
+              {!expired ? (
+                <div className="w-full space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                      Atualizando a cada 5s
+                    </span>
+                    <span className={cn('font-mono font-semibold', timeLeft <= 15 ? 'text-destructive' : 'text-muted-foreground')}>
+                      {timeLeft}s
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-1000',
+                        timeLeft <= 15 ? 'bg-destructive' : timeLeft <= 30 ? 'bg-warning' : 'bg-[#25D366]'
+                      )}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Button size="sm" className="w-full" loading={connectInstance.isPending}
+                  onClick={() => connectInstance.mutateAsync(instance.id)}>
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar novo QR code
+                </Button>
+              )}
+
+              {/* Steps */}
+              <div className="w-full rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-xs font-semibold text-foreground mb-2">Como escanear:</p>
+                <div className="space-y-1.5">
+                  {[
+                    'Abra o WhatsApp no celular',
+                    'Toque em ⋮ → Dispositivos conectados',
+                    'Toque em "Conectar um dispositivo"',
+                    'Aponte a câmera para o QR code acima',
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full bg-[#25D366]/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[9px] font-bold text-[#25D366]">{i + 1}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{text}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Gerando QR code...</p>
+            /* ── LOADING ── */
+            <div className="flex flex-col items-center gap-4 py-8">
+              <div className="relative h-16 w-16">
+                <div className="absolute inset-0 rounded-full border-4 border-muted" />
+                <div className="absolute inset-0 rounded-full border-4 border-t-[#25D366] animate-spin" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">Gerando QR code...</p>
+                <p className="text-xs text-muted-foreground mt-1">Conectando ao servidor Evolution</p>
+              </div>
             </div>
           )}
         </DialogBody>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Fechar</Button>
         </DialogFooter>
@@ -330,6 +425,10 @@ function InstanceCard({ instance }: { instance: EvolutionInstance }) {
   const setWebhook = useSetWebhook()
   const deleteInstance = useDeleteInstance()
   const updateInstance = useUpdateInstance()
+  const { data: creds = [] } = useAICredentials()
+
+  const activeAICred = creds.find(c => c.is_active)
+  const aiLabel = activeAICred ? (PROVIDER_LABELS[activeAICred.provider] ?? activeAICred.provider) : null
 
   const status = STATUS_CONFIG[instance.status] ?? STATUS_CONFIG.disconnected
   const StatusIcon = status.icon
@@ -415,16 +514,46 @@ function InstanceCard({ instance }: { instance: EvolutionInstance }) {
             </div>
           )}
 
-          {/* Toggle auto_reply */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Bot className="h-3.5 w-3.5 text-accent" />
-              <span className="text-xs text-muted-foreground">IA ativa</span>
+          {/* Agente de IA */}
+          <div className={cn(
+            'rounded-xl border p-3 space-y-2 transition-colors',
+            instance.auto_reply && activeAICred ? 'border-violet-200 bg-violet-50/50' : 'border-border'
+          )}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Bot className={cn('h-3.5 w-3.5', instance.auto_reply ? 'text-violet-600' : 'text-muted-foreground')} />
+                <span className="text-xs font-medium text-foreground">Agente de IA</span>
+                {instance.auto_reply && aiLabel && (
+                  <span className="text-[9px] rounded-full px-1.5 py-0.5 bg-violet-100 text-violet-700 font-semibold border border-violet-200">
+                    {aiLabel}
+                  </span>
+                )}
+              </div>
+              <Switch
+                checked={instance.auto_reply}
+                onCheckedChange={v => updateInstance.mutate({ id: instance.id, auto_reply: v })}
+              />
             </div>
-            <Switch
-              checked={instance.auto_reply}
-              onCheckedChange={v => updateInstance.mutate({ id: instance.id, auto_reply: v })}
-            />
+            {instance.auto_reply && (
+              activeAICred ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                    <span className="text-xs text-muted-foreground">Respondendo automaticamente</span>
+                  </div>
+                  <a href="/admin/agents" className="text-[10px] text-violet-600 font-medium hover:underline">
+                    Configurar →
+                  </a>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="h-3 w-3 text-warning-foreground flex-shrink-0" />
+                  <a href="/admin/agents" className="text-xs text-warning-foreground hover:underline">
+                    Adicione uma API key em Agentes IA
+                  </a>
+                </div>
+              )
+            )}
           </div>
 
           {/* Ações */}
@@ -502,6 +631,68 @@ function InstanceCard({ instance }: { instance: EvolutionInstance }) {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+// ── AI Status Banner ──────────────────────────────────────────
+function AIStatusBanner() {
+  const { data: creds = [] } = useAICredentials()
+  const activeCreds = creds.filter(c => c.is_active)
+  const { data: instances = [] } = useEvolutionInstances()
+  const aiActiveCount = instances.filter(i => i.auto_reply).length
+
+  return (
+    <Card className="border-violet-200 bg-gradient-to-r from-violet-50 to-purple-50/50">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-xl bg-violet-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Agente de IA</p>
+            <div className="flex items-center gap-3 mt-0.5">
+              {activeCreds.length > 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  {activeCreds.map(c => PROVIDER_LABELS[c.provider] ?? c.provider).join(', ')} configurado{activeCreds.length > 1 ? 's' : ''}
+                  {aiActiveCount > 0 && ` · ${aiActiveCount} instância${aiActiveCount > 1 ? 's' : ''} com IA ativa`}
+                </span>
+              ) : (
+                <span className="text-xs text-warning-foreground flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> Nenhuma API key configurada
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {activeCreds.length > 0 && (
+              <div className="flex items-center gap-1 text-xs text-success font-medium">
+                <ShieldCheck className="h-3.5 w-3.5" /> Ativo
+              </div>
+            )}
+            <a href="/admin/agents">
+              <Button variant="outline" size="sm" className="text-violet-700 border-violet-300 hover:bg-violet-100">
+                <Bot className="h-3.5 w-3.5" /> Gerenciar Agentes
+              </Button>
+            </a>
+          </div>
+        </div>
+        {activeCreds.length > 0 && (
+          <div className="flex gap-2 mt-3 pt-3 border-t border-violet-200/60">
+            {activeCreds.map(c => (
+              <span key={c.provider} className="flex items-center gap-1.5 text-[10px] rounded-full px-2.5 py-1 bg-white border border-violet-200 text-violet-700 font-medium shadow-sm">
+                <div className="h-1.5 w-1.5 rounded-full bg-success" />
+                {PROVIDER_LABELS[c.provider] ?? c.provider}
+              </span>
+            ))}
+            {creds.filter(c => !c.is_active).length > 0 && (
+              <span className="text-[10px] text-muted-foreground self-center ml-1">
+                + {creds.filter(c => !c.is_active).length} sem chave
+              </span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -584,6 +775,9 @@ export function WhatsAppPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Agent Banner */}
+      <AIStatusBanner />
 
       {/* Filtros */}
       <div className="flex items-center gap-3">
