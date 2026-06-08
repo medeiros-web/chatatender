@@ -162,6 +162,17 @@ function SAQuickAccessApps() {
           <ExternalLink className="h-3.5 w-3.5 opacity-80" />
         </a>
 
+        {/* WAVOIP button */}
+        <a
+          href="https://app.wavoip.com/auth"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all"
+        >
+          <ExternalLink className="h-4 w-4" />
+          WAVOIP
+        </a>
+
         {/* APPs dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

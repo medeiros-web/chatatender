@@ -115,6 +115,22 @@ function WhatsAppQuickBtn() {
   )
 }
 
+function WavoipQuickBtn() {
+  return (
+    <a
+      href="https://app.wavoip.com/auth"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-sky-50 transition-colors text-center ring-1 ring-sky-200"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500 shadow-sm">
+        <ExternalLink className="h-4 w-4 text-white" />
+      </div>
+      <span className="text-[10px] font-semibold text-sky-600 leading-tight">WAVOIP</span>
+    </a>
+  )
+}
+
 const APP_LINKS = [
   { label: 'Painel.chatatender.ia.br',        href: 'https://painel.chatatender.ia.br' },
   { label: 'ia.chatatender.com.br',           href: 'https://ia.chatatender.com.br' },
@@ -167,6 +183,7 @@ function QuickAccess() {
           </Link>
         ))}
         <WhatsAppQuickBtn />
+        <WavoipQuickBtn />
         <AppsButton />
       </CardContent>
     </Card>
