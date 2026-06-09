@@ -15,6 +15,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import { FAB } from '@/components/mobile/FAB'
+import { HelpChatBot } from '@/components/HelpChatBot'
 import { MessageSquare, LogOut, User, Settings, ShieldCheck } from 'lucide-react'
 
 export function AdminLayout() {
@@ -121,6 +122,9 @@ export function AdminLayout() {
           <FAB />
         </>
       )}
+
+      {/* Help Chatbot — always visible */}
+      <HelpChatBot />
     </div>
     </TooltipProvider>
   )
