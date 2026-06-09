@@ -525,3 +525,46 @@ export function useSyncGoogleCalendar() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar_events'] }),
   })
 }
+
+export function useDisconnectGoogleCalendar() {
+  const { organizationId, user } = useAuth()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from('google_calendar_connections')
+        .update({ is_active: false })
+        .eq('organization_id', organizationId)
+        .eq('user_id', user!.id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['google_calendar_connection'] }),
+  })
+}
+
+export function usePushBookingToGoogle() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-push-event`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ booking_request_id: bookingId }),
+        }
+      )
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Erro ao criar evento no Google Calendar')
+      return json
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['booking_requests'] })
+      qc.invalidateQueries({ queryKey: ['calendar_events'] })
+    },
+  })
+}
