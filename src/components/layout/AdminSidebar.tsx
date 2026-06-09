@@ -20,7 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Inbox', to: '/admin/inbox', icon: Inbox },
   { label: 'Leads & CRM', to: '/admin/leads', icon: Users },
   { label: 'CRM WhatsApp', to: '/admin/crm', icon: KanbanSquare },
-  { label: 'Pipeline', to: '/admin/pipeline', icon: Target, soon: true },
+  { label: 'Pipeline', to: '/admin/pipeline', icon: Target },
   { label: 'Agentes IA', to: '/admin/agents', icon: Bot },
   { label: 'Calendário', to: '/admin/calendar', icon: Calendar },
   { label: 'Funis', to: '/admin/funnels', icon: Zap },
