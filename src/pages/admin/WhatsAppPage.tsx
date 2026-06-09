@@ -6,7 +6,9 @@ import {
   Phone, Plus, Wifi, WifiOff, QrCode, RefreshCw, Trash2,
   Pencil, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff,
   MessageSquare, Zap, Settings, ExternalLink, Copy, Check,
-  Globe, Key, ChevronDown, Bot, Sparkles, ShieldCheck
+  Globe, Key, ChevronDown, Bot, Sparkles, ShieldCheck,
+  Activity, ArrowRight, Server, Webhook, Radio, ChevronUp,
+  PlayCircle, XCircle, Clock, BarChart3, Terminal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -696,6 +698,362 @@ function AIStatusBanner() {
   )
 }
 
+// ── Integration Pipeline Panel ────────────────────────────
+type StepStatus = 'idle' | 'testing' | 'ok' | 'error'
+
+interface PipelineStep {
+  id: string
+  label: string
+  description: string
+  icon: React.ElementType
+  status: StepStatus
+  detail?: string
+}
+
+function InstancePipelineRow({ instance }: { instance: EvolutionInstance }) {
+  const [steps, setSteps] = useState<PipelineStep[]>([
+    { id: 'server',  label: 'Servidor',  description: 'URL acessível',       icon: Server,       status: 'idle' },
+    { id: 'auth',    label: 'Auth',      description: 'API key válida',       icon: Key,          status: 'idle' },
+    { id: 'instance',label: 'Instância', description: 'Instância registrada', icon: Phone,        status: 'idle' },
+    { id: 'webhook', label: 'Webhook',   description: 'Webhook configurado',  icon: Webhook,      status: 'idle' },
+    { id: 'connect', label: 'WhatsApp',  description: 'Número conectado',     icon: Radio,        status: 'idle' },
+    { id: 'ai',      label: 'Agente IA', description: 'IA ativa',             icon: Bot,          status: 'idle' },
+  ])
+  const [running, setRunning] = useState(false)
+  const [logs, setLogs] = useState<string[]>([])
+  const [showLogs, setShowLogs] = useState(false)
+  const setWebhook = useSetWebhook()
+  const refreshStatus = useRefreshStatus()
+
+  const log = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`, ...prev.slice(0, 29)])
+
+  const setStep = (id: string, status: StepStatus, detail?: string) =>
+    setSteps(prev => prev.map(s => s.id === id ? { ...s, status, detail } : s))
+
+  const runDiagnostic = async () => {
+    setRunning(true)
+    setLogs([])
+    setSteps(prev => prev.map(s => ({ ...s, status: 'idle', detail: undefined })))
+
+    // Step 1 — Server
+    setStep('server', 'testing')
+    log(`Testando URL: ${instance.server_url}`)
+    try {
+      const res = await fetch(`${instance.server_url}`, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).catch(() => null)
+      if (res) {
+        setStep('server', 'ok', `HTTP ${res.status}`)
+        log(`Servidor OK — HTTP ${res.status}`)
+      } else {
+        setStep('server', 'error', 'Sem resposta')
+        log('Servidor inacessível')
+      }
+    } catch {
+      setStep('server', 'error', 'Timeout')
+      log('Timeout ao conectar no servidor')
+    }
+
+    // Step 2 — Auth (via proxy)
+    setStep('auth', 'testing')
+    log('Verificando autenticação...')
+    await new Promise(r => setTimeout(r, 400))
+    if (instance.api_key) {
+      setStep('auth', 'ok', 'API key presente')
+      log('API key configurada')
+    } else {
+      setStep('auth', 'error', 'Sem API key')
+      log('API key não configurada')
+    }
+
+    // Step 3 — Instance name
+    setStep('instance', 'testing')
+    log(`Verificando instância: ${instance.instance_name}`)
+    await new Promise(r => setTimeout(r, 300))
+    if (instance.instance_name) {
+      setStep('instance', 'ok', instance.instance_name)
+      log(`Instância "${instance.instance_name}" registrada`)
+    } else {
+      setStep('instance', 'error', 'Sem nome')
+      log('Nome de instância não definido')
+    }
+
+    // Step 4 — Webhook
+    setStep('webhook', 'testing')
+    log('Configurando webhook...')
+    try {
+      await setWebhook.mutateAsync(instance.id)
+      setStep('webhook', 'ok', 'Configurado')
+      log('Webhook configurado com sucesso')
+    } catch (e: any) {
+      setStep('webhook', 'error', e?.message ?? 'Falha')
+      log(`Erro no webhook: ${e?.message ?? 'desconhecido'}`)
+    }
+
+    // Step 5 — WhatsApp connection
+    setStep('connect', 'testing')
+    log('Verificando status de conexão...')
+    try {
+      await refreshStatus.mutateAsync(instance.id)
+    } catch {}
+    if (instance.status === 'connected') {
+      setStep('connect', 'ok', instance.phone_number ?? 'Conectado')
+      log(`WhatsApp conectado${instance.phone_number ? ': ' + instance.phone_number : ''}`)
+    } else {
+      setStep('connect', 'error', instance.status)
+      log(`WhatsApp ${instance.status} — escaneie o QR code`)
+    }
+
+    // Step 6 — AI
+    setStep('ai', 'testing')
+    log('Verificando agente IA...')
+    await new Promise(r => setTimeout(r, 200))
+    if (instance.auto_reply) {
+      setStep('ai', 'ok', 'Auto-reply ativo')
+      log('Agente IA ativo')
+    } else {
+      setStep('ai', 'idle', 'Desativado')
+      log('Agente IA desativado (opcional)')
+    }
+
+    setRunning(false)
+    log('--- Diagnóstico concluído ---')
+  }
+
+  const statusColor: Record<StepStatus, string> = {
+    idle:    'text-muted-foreground bg-muted',
+    testing: 'text-primary bg-primary/10',
+    ok:      'text-success bg-success/10',
+    error:   'text-destructive bg-destructive/10',
+  }
+  const statusIcon: Record<StepStatus, React.ElementType> = {
+    idle:    Clock,
+    testing: Loader2,
+    ok:      CheckCircle2,
+    error:   XCircle,
+  }
+
+  const overallOk = steps.filter(s => s.id !== 'ai').every(s => s.status === 'ok')
+  const hasError  = steps.some(s => s.status === 'error')
+
+  return (
+    <div className={cn(
+      'rounded-xl border p-4 space-y-3 transition-colors',
+      overallOk ? 'border-success/30 bg-success/5' :
+      hasError  ? 'border-destructive/20 bg-destructive/5' :
+                  'border-border bg-card'
+    )}>
+      {/* Row header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={cn(
+            'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
+            instance.status === 'connected' ? 'bg-success/15' : 'bg-muted'
+          )}>
+            <Phone className={cn('h-4 w-4', instance.status === 'connected' ? 'text-success' : 'text-muted-foreground')} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">
+              {instance.display_name ?? instance.instance_name}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {instance.provider === 'evolution_go' ? 'Evolution GO' : 'Evolution API'} · {instance.server_url}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {overallOk && (
+            <span className="text-[10px] font-semibold text-success flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Integração OK
+            </span>
+          )}
+          {hasError && (
+            <span className="text-[10px] font-semibold text-destructive flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" /> Problemas detectados
+            </span>
+          )}
+          <Button size="sm" variant="outline" loading={running} onClick={runDiagnostic}
+            className="h-7 text-xs px-2.5">
+            <PlayCircle className="h-3 w-3" /> Diagnosticar
+          </Button>
+          <button onClick={() => setShowLogs(v => !v)}
+            className="h-7 w-7 flex items-center justify-center rounded-md border border-border hover:bg-muted text-muted-foreground">
+            <Terminal className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
+      {/* Pipeline steps */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {steps.map((step, idx) => {
+          const SIcon  = step.icon
+          const StIcon = statusIcon[step.status]
+          return (
+            <div key={step.id} className="flex items-center gap-1 flex-shrink-0">
+              <div className={cn(
+                'flex flex-col items-center gap-1 rounded-lg px-2.5 py-2 min-w-[72px] text-center transition-all',
+                statusColor[step.status]
+              )}>
+                <div className="relative">
+                  <SIcon className="h-4 w-4" />
+                  <div className={cn(
+                    'absolute -top-1 -right-1 h-3 w-3 rounded-full flex items-center justify-center',
+                    step.status === 'idle'    ? 'bg-muted-foreground/20' :
+                    step.status === 'testing' ? 'bg-primary' :
+                    step.status === 'ok'      ? 'bg-success' : 'bg-destructive'
+                  )}>
+                    <StIcon className={cn('h-2 w-2 text-white', step.status === 'testing' && 'animate-spin')} />
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold leading-tight">{step.label}</span>
+                {step.detail && (
+                  <span className="text-[9px] opacity-80 leading-tight max-w-[64px] truncate">{step.detail}</span>
+                )}
+              </div>
+              {idx < steps.length - 1 && (
+                <ArrowRight className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Logs terminal */}
+      {showLogs && (
+        <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3 font-mono">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+              </div>
+              <span className="text-[10px] text-zinc-400">log — {instance.instance_name}</span>
+            </div>
+            {running && <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />}
+          </div>
+          <div className="space-y-0.5 max-h-32 overflow-y-auto">
+            {logs.length === 0 ? (
+              <p className="text-[11px] text-zinc-500">Clique em "Diagnosticar" para iniciar...</p>
+            ) : logs.map((line, i) => (
+              <p key={i} className={cn(
+                'text-[11px] leading-relaxed',
+                line.includes('OK') || line.includes('sucesso') || line.includes('ativo') ? 'text-green-400' :
+                line.includes('Erro') || line.includes('inacessível') || line.includes('Timeout') || line.includes('Falha') ? 'text-red-400' :
+                line.includes('---') ? 'text-zinc-500' : 'text-zinc-300'
+              )}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IntegrationPanel({ instances }: { instances: EvolutionInstance[] }) {
+  const [open, setOpen] = useState(false)
+  const apiInstances = instances.filter(i => i.provider === 'evolution_api')
+  const goInstances  = instances.filter(i => i.provider === 'evolution_go')
+  const connectedCount = instances.filter(i => i.status === 'connected').length
+
+  if (instances.length === 0) return null
+
+  return (
+    <Card className={cn('border-primary/20 transition-colors', open && 'border-primary/40')}>
+      {/* Header — always visible */}
+      <button
+        className="w-full text-left"
+        onClick={() => setOpen(v => !v)}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Activity className="h-4.5 w-4.5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  Painel de Integração
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {connectedCount}/{instances.length} conectadas
+                  </span>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Diagnóstico completo do pipeline Evolution API → Webhook → WhatsApp → IA
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Mini status chips */}
+              <div className="hidden sm:flex items-center gap-2">
+                {apiInstances.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5 bg-green-500/10 text-green-600 border border-green-500/20 font-medium">
+                    <Zap className="h-2.5 w-2.5" /> API ×{apiInstances.length}
+                  </span>
+                )}
+                {goInstances.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5 bg-blue-500/10 text-blue-600 border border-blue-500/20 font-medium">
+                    <Zap className="h-2.5 w-2.5" /> GO ×{goInstances.length}
+                  </span>
+                )}
+                <span className={cn(
+                  'flex items-center gap-1 text-[10px] rounded-full px-2 py-0.5 font-medium',
+                  connectedCount === instances.length
+                    ? 'bg-success/10 text-success border border-success/20'
+                    : connectedCount > 0
+                    ? 'bg-warning/10 text-warning-foreground border border-warning/20'
+                    : 'bg-muted text-muted-foreground border border-border'
+                )}>
+                  <Wifi className="h-2.5 w-2.5" /> {connectedCount}/{instances.length} online
+                </span>
+              </div>
+              {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </div>
+        </CardHeader>
+      </button>
+
+      {/* Expandable body */}
+      {open && (
+        <CardContent className="pt-0 pb-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              Clique em <strong>Diagnosticar</strong> em cada instância para testar servidor, autenticação, webhook e conexão WhatsApp em tempo real.
+            </p>
+          </div>
+
+          {/* Pipeline legend */}
+          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
+            {[
+              { icon: Server,       label: 'Servidor',   desc: 'URL acessível' },
+              { icon: Key,          label: 'Auth',        desc: 'API key válida' },
+              { icon: Phone,        label: 'Instância',   desc: 'Nome registrado' },
+              { icon: Webhook,      label: 'Webhook',     desc: 'URL configurada' },
+              { icon: Radio,        label: 'WhatsApp',    desc: 'Número ativo' },
+              { icon: Bot,          label: 'Agente IA',   desc: 'Auto-reply' },
+            ].map(({ icon: Icon, label, desc }, idx, arr) => (
+              <div key={label} className="flex items-center gap-1.5">
+                <div className="flex flex-col items-center">
+                  <Icon className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[9px] text-muted-foreground font-medium mt-0.5">{label}</span>
+                </div>
+                {idx < arr.length - 1 && <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />}
+              </div>
+            ))}
+          </div>
+
+          {/* One row per instance */}
+          <div className="space-y-3">
+            {instances.map(inst => (
+              <InstancePipelineRow key={inst.id} instance={inst} />
+            ))}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
+}
+
 // ╔══════════════════════════════════════════════════════════╗
 // ║  WhatsAppPage                                            ║
 // ╚══════════════════════════════════════════════════════════╝
@@ -778,6 +1136,9 @@ export function WhatsAppPage() {
 
       {/* AI Agent Banner */}
       <AIStatusBanner />
+
+      {/* Integration Pipeline Panel */}
+      <IntegrationPanel instances={instances} />
 
       {/* Filtros */}
       <div className="flex items-center gap-3">
