@@ -1,4 +1,4 @@
-import { useState, Component, type ReactNode } from 'react'
+import { useState, useEffect, Component, type ReactNode } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlatformName, usePlatformBranding } from '@/hooks/usePlatformBranding'
@@ -15,6 +15,8 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { BottomNav } from '@/components/mobile/BottomNav'
 import { FAB } from '@/components/mobile/FAB'
+import { InstallBanner } from '@/components/mobile/InstallBanner'
+import { SplashScreen } from '@/components/mobile/SplashScreen'
 import { HelpChatBot } from '@/components/HelpChatBot'
 import { MessageSquare, LogOut, User, Settings, ShieldCheck } from 'lucide-react'
 
@@ -27,6 +29,22 @@ export function AdminLayout() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [splashDone, setSplashDone] = useState(() => {
+    try { return localStorage.getItem('pwa-splash-done') === '1' } catch { return false }
+  })
+
+  useEffect(() => {
+    if (splashDone) return
+    // Show splash only in standalone/installed mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true
+    if (!isStandalone) setSplashDone(true)
+  }, [splashDone])
+
+  const handleSplashDone = () => {
+    setSplashDone(true)
+    try { localStorage.setItem('pwa-splash-done', '1') } catch {}
+  }
 
   const initials = profile?.full_name
     ?.split(' ')
@@ -42,6 +60,7 @@ export function AdminLayout() {
 
   return (
     <TooltipProvider delayDuration={300}>
+    {!splashDone && <SplashScreen onDone={handleSplashDone} />}
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar — hidden on mobile */}
       {!isMobile && (
@@ -106,6 +125,9 @@ export function AdminLayout() {
             </DropdownMenu>
           </div>
         </header>
+
+        {/* Install banner — shown when app can be installed */}
+        <InstallBanner />
 
         {/* Content — extra bottom padding on mobile for BottomNav */}
         <main className={isMobile ? 'flex-1 overflow-y-auto pb-16' : 'flex-1 overflow-y-auto'}>
