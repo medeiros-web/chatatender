@@ -33,7 +33,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const ADMIN_ITEMS: NavItem[] = [
   { label: 'Setores', to: '/admin/sectors', icon: Building2, adminOnly: true },
-  { label: 'Equipe', to: '/admin/team', icon: Users, adminOnly: true, soon: true },
+  { label: 'Equipe', to: '/admin/team', icon: Users, adminOnly: true },
   { label: 'Produtos', to: '/admin/products', icon: Megaphone, adminOnly: true },
   { label: 'Comissões', to: '/admin/commissions', icon: DollarSign, adminOnly: true },
   { label: 'WhatsApp', to: '/admin/whatsapp', icon: MessageSquare, adminOnly: true },

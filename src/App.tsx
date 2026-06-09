@@ -26,6 +26,7 @@ import { BrainPage } from '@/pages/admin/BrainPage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { ReportsPage } from '@/pages/admin/ReportsPage'
 import { PipelinePage } from '@/pages/admin/PipelinePage'
+import { TeamPage } from '@/pages/admin/TeamPage'
 import { SuperAdminLayout } from '@/pages/super-admin/SuperAdminLayout'
 import {
   SADashboard, SAOrganizations, SAUsers,
@@ -78,6 +79,7 @@ export default function App() {
               <Route path="reports"         element={<ReportsPage />} />
               <Route path="pipeline"        element={<PipelinePage />} />
               <Route path="settings"        element={<SettingsPage />} />
+              <Route path="team"            element={<TeamPage />} />
             </Route>
 
             <Route element={<SuperAdminRoute />}>
