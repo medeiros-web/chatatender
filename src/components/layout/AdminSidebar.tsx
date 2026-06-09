@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Funis', to: '/admin/funnels', icon: Zap },
   { label: 'Forms', to: '/admin/forms', icon: FileText },
   { label: 'Pagamentos', to: '/admin/payments', icon: CreditCard },
-  { label: 'Relatórios', to: '/admin/reports', icon: BarChart3, soon: true },
+  { label: 'Relatórios', to: '/admin/reports', icon: BarChart3 },
   { label: 'Notificações', to: '/admin/notifications', icon: Bell },
   { label: 'Brain / IA',  to: '/admin/brain',         icon: Brain },
 ]
