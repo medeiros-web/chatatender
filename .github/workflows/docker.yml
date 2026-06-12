@@ -50,5 +50,5 @@ jobs:
       - name: Deploy to Portainer
         run: |
           curl -sk -X POST \
-            "https://portainer.chatatender.ia.br/api/stacks/webhooks/${{ secrets.PORTAINER_WEBHOOK_TOKEN }}" \
-            || echo "Webhook optional — configure PORTAINER_WEBHOOK_TOKEN to auto-redeploy"
+            "https://portainer.chatatender.ia.br/api/webhooks/${{ secrets.PORTAINER_WEBHOOK_TOKEN }}" \
+            && echo "Portainer redeploy triggered" || echo "Portainer webhook failed"
