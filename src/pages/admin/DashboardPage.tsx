@@ -131,6 +131,22 @@ function WavoipQuickBtn() {
   )
 }
 
+function AgenteIAQuickBtn() {
+  return (
+    <a
+      href="https://agente.chatatender.ia.br"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 hover:bg-violet-50 transition-colors text-center ring-1 ring-violet-200"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500 shadow-sm">
+        <Bot className="h-4 w-4 text-white" />
+      </div>
+      <span className="text-[10px] font-semibold text-violet-600 leading-tight">Agente IA</span>
+    </a>
+  )
+}
+
 const APP_LINKS = [
   { label: 'Painel.chatatender.ia.br',        href: 'https://painel.chatatender.ia.br' },
   { label: 'ia.chatatender.com.br',           href: 'https://ia.chatatender.com.br' },
@@ -184,6 +200,7 @@ function QuickAccess() {
         ))}
         <WhatsAppQuickBtn />
         <WavoipQuickBtn />
+        <AgenteIAQuickBtn />
         <AppsButton />
       </CardContent>
     </Card>
