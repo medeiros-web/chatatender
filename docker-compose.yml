@@ -18,7 +18,7 @@ services:
           memory: 256M
       labels:
         - traefik.enable=true
-        - traefik.http.routers.chatatender.rule=Host(`painel.chatatender.ia.br`)
+        - traefik.http.routers.chatatender.rule=Host(`bot.chatatender.ia.br`)
         - traefik.http.routers.chatatender.entrypoints=websecure
         - traefik.http.routers.chatatender.priority=10
         - traefik.http.routers.chatatender.tls.certresolver=letsencryptresolver
